@@ -1,0 +1,1807 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>棍母增量</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f6f4; --surface:#ffffff; --surface-2:#eeeeeb; --ink:#1c1c1f; --ink-2:#5d5e64; --ink-3:#9a9ba1; --line:#d9d9d4; --line-2:#c4c4be;
+  --cw:#ffffff; --cr:#cf2f2b; --cg:#1b8a4c; --cb:#2560c8; --cy:#9c7200; --cc:#0a858f; --cm:#bb1f8b; --ck:#000000; --gray:#8c8d92;
+  --w-chip:#1c1c1f; --k-chip:transparent; --k-fg:#000;
+  --ff-ui:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Source Han Sans SC",system-ui,sans-serif;
+  --ff-glyph:"ZCOOL XiaoWei","Songti SC","STSong","SimSun",serif;
+  --ff-num:"Space Grotesk","PingFang SC","Microsoft YaHei",sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101113; --surface:#17181b; --surface-2:#1e1f23; --ink:#ececed; --ink-2:#a3a4aa; --ink-3:#6b6c72; --line:#2b2c31; --line-2:#3a3b41;
+    --cw:#f4f4f1; --cr:#ff6464; --cg:#55d888; --cb:#6ea9ff; --cy:#ffd548; --cc:#4fe2e2; --cm:#ff70d8; --ck:#000000; --gray:#8a8b90;
+    --w-chip:transparent; --k-chip:#ececed; --k-fg:#000;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101113; --surface:#17181b; --surface-2:#1e1f23; --ink:#ececed; --ink-2:#a3a4aa; --ink-3:#6b6c72; --line:#2b2c31; --line-2:#3a3b41;
+  --cw:#f4f4f1; --cr:#ff6464; --cg:#55d888; --cb:#6ea9ff; --cy:#ffd548; --cc:#4fe2e2; --cm:#ff70d8; --ck:#000000; --gray:#8a8b90;
+  --w-chip:transparent; --k-chip:#ececed; --k-fg:#000;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--ff-ui);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+p{margin:0}
+h2,h3{margin:0;font-weight:600}
+
+/* —— 数字：只有颜色 —— */
+.n{font-family:var(--ff-num);font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap;letter-spacing:.01em}
+.n-w{color:var(--cw);background:var(--w-chip);padding:0 .3em;border-radius:.22em}
+.n-r{color:var(--cr)} .n-g{color:var(--cg)} .n-b{color:var(--cb)}
+.n-y{color:var(--cy)} .n-c{color:var(--cc)} .n-m{color:var(--cm)}
+.n-k{color:var(--k-fg);background:var(--k-chip);padding:0 .3em;border-radius:.22em}
+.n-t{color:transparent;border-bottom:1px dashed var(--line-2);padding:0 .15em}
+.n-t::selection{color:var(--ink);background:var(--surface-2)}
+.peek .n-t{color:color-mix(in srgb,var(--ink) 16%,transparent)}
+.dot{display:inline-block;width:.72em;height:.72em;border-radius:50%;vertical-align:-.06em;margin:0 .08em}
+.d-w{background:var(--cw);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.d-r{background:var(--cr)} .d-g{background:var(--cg)} .d-b{background:var(--cb)}
+.d-y{background:var(--cy)} .d-c{background:var(--cc)} .d-m{background:var(--cm)}
+.d-k{background:var(--ck);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.d-t{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line-2)}
+.colorless .n{color:var(--gray)!important;background:none!important}
+.colorless .dot{background:var(--gray)!important;box-shadow:none!important}
+.colorless .ray{stroke:var(--gray)!important}
+
+/* —— 布局 —— */
+#app{min-height:100vh;display:flex;flex-direction:column}
+.top{display:flex;align-items:baseline;gap:20px;padding:18px 28px 6px}
+.top h1{margin:0;font-family:var(--ff-glyph);font-weight:400;font-size:34px;line-height:1;letter-spacing:.06em;cursor:default;user-select:none;white-space:nowrap}
+#ticker{flex:1;min-width:0;color:var(--ink-3);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .5s}
+#bank{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);display:flex;align-items:center;gap:22px;padding:10px 28px 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+#bank::-webkit-scrollbar{display:none}
+.bk{display:flex;flex-direction:column;line-height:1.15;flex:none}
+.bk .n{font-size:21px}
+.bk small{font-size:11px;color:var(--ink-3);font-family:var(--ff-num);font-variant-numeric:tabular-nums;white-space:nowrap;margin-top:3px}
+.bk.big .n{font-size:28px}
+.bk.new .n{animation:pop .9s ease}
+@keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+
+.main{flex:1;display:grid;grid-template-columns:64px minmax(280px,340px) minmax(0,1fr);min-height:0}
+#rail{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 0;border-right:1px solid var(--line)}
+.tab{position:relative;width:44px;height:44px;border-radius:50%;font-family:var(--ff-glyph);font-size:23px;line-height:44px;text-align:center;color:var(--ink-3);transition:color .15s}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.tab[hidden]{display:none}
+.tab.fresh::after{content:"";position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--ink)}
+.tab .tip{display:none}
+
+#stage{position:relative;border-right:1px solid var(--line);padding:26px 24px 24px;display:flex;flex-direction:column;align-items:center;min-height:0}
+#pocket{position:relative;width:210px;height:210px;border-radius:50%;display:grid;place-items:center;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#pocket .ring{position:absolute;inset:0;border-radius:50%;border:2px dashed var(--ink);transition:border-color .2s}
+#pocket .glyph{font-family:var(--ff-glyph);font-size:74px;line-height:1;transition:transform .08s}
+#pocket:active .glyph{transform:scale(.92)}
+#pocket.nohand .ring{border-color:var(--ink-3)}
+#pocket.nohand .glyph{color:var(--ink-3)}
+.stagestats{margin-top:18px;text-align:center;font-size:13px;color:var(--ink-2);display:grid;gap:4px}
+.stagestats .n{font-size:15px}
+.idlebar{width:180px;height:4px;margin:10px auto 0;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.idlebar i{display:block;height:100%;width:0;background:var(--ink-2)}
+#junklayer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.junk{position:absolute;pointer-events:auto;padding:7px 12px;background:var(--surface);border:1.5px solid var(--ink);border-radius:3px;font-size:13px;line-height:1.3;transform:rotate(-4deg);animation:drop .35s ease-out;box-shadow:3px 3px 0 var(--line-2)}
+.junk b{display:block;font-weight:600}
+.junk span{font-size:11px;color:var(--ink-3)}
+.junk:hover{transform:rotate(-1deg) scale(1.04)}
+@keyframes drop{from{transform:translateY(-18px) rotate(-12deg);opacity:0}to{transform:rotate(-4deg);opacity:1}}
+.floater{position:fixed;pointer-events:none;z-index:40;font-size:17px;animation:rise .9s ease-out forwards}
+@keyframes rise{from{transform:translate(-50%,-50%);opacity:1}to{transform:translate(-50%,-160%);opacity:0}}
+#log{margin-top:22px;width:100%;flex:1;min-height:120px;overflow:hidden;font-size:13px;line-height:1.55;color:var(--ink-2);mask-image:linear-gradient(to bottom,#000 55%,transparent);-webkit-mask-image:linear-gradient(to bottom,#000 55%,transparent)}
+#log p{padding:5px 0;border-top:1px dashed var(--line)}
+#log p:first-child{color:var(--ink)}
+#log .n{font-weight:600}
+
+#panel{padding:26px 32px 60px;min-width:0}
+.pane{display:none;max-width:860px}
+.pane.on{display:block}
+.pane>header{margin-bottom:18px}
+.pane>header h2{font-family:var(--ff-glyph);font-weight:400;font-size:28px;letter-spacing:.04em;line-height:1.2}
+.pane>header p{color:var(--ink-2);font-size:14px;margin-top:6px;max-width:62ch}
+.sect{margin-top:30px}
+.sect>h3{font-size:14px;color:var(--ink-2);font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.sect>h3 .seg{margin-left:auto}
+.muted{color:var(--ink-3)}
+.small{font-size:12.5px}
+
+/* 按钮：买得起是实线，买不起是虚线 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:6px 14px;border:1.5px solid var(--ink);border-radius:6px;background:var(--surface);font-size:14px;white-space:nowrap;transition:background .12s}
+.btn:hover{background:var(--surface-2)}
+.btn.no,.btn:disabled{border-style:dashed;border-color:var(--line-2);color:var(--ink-3);cursor:default;background:transparent}
+.btn.no .n,.btn:disabled .n{opacity:.75}
+.btn.solid{background:var(--ink);color:var(--bg)}
+.btn.solid:hover{background:var(--ink-2)}
+.btn.solid.no,.btn.solid:disabled{background:transparent;color:var(--ink-3)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:6px;overflow:hidden}
+.seg button{padding:4px 10px;font-size:12.5px;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);cursor:pointer;user-select:none}
+.toggle input{accent-color:var(--ink);width:16px;height:16px}
+
+/* 空 */
+.gens{border-top:1px solid var(--line)}
+.gen{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 18px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
+.gen .nm{font-weight:600;font-size:15.5px}
+.gen .cnt{font-family:var(--ff-num);font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink-2);margin-left:8px;font-size:14px}
+.gen .ds{font-size:12.5px;color:var(--ink-3)}
+.gen .pr{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.gen .btn{grid-row:1/span 3;grid-column:2;min-width:132px}
+.gen.ghost{opacity:.55}
+.gen.ghost .nm{letter-spacing:.3em}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:10px}
+.card{display:flex;flex-direction:column;gap:6px;text-align:left;padding:12px 14px;border:1.5px solid var(--ink);border-radius:8px;background:var(--surface);min-height:104px}
+.card:hover{background:var(--surface-2)}
+.card .nm{font-weight:600;font-size:14.5px}
+.card .ds{font-size:12.5px;color:var(--ink-2);flex:1;line-height:1.5}
+.card .cs{font-size:13px}
+.card.no{border-style:dashed;border-color:var(--line-2);cursor:default;background:transparent}
+.card.no .nm,.card.no .ds{color:var(--ink-3)}
+.card.own{border-style:solid;border-color:var(--line);background:transparent;cursor:default}
+.card.own .cs{color:var(--ink-3);font-size:12px}
+.empty{padding:16px 0;color:var(--ink-3);font-size:13px}
+
+/* 光 */
+.prism{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.tri{width:100%;max-width:320px;touch-action:none;user-select:none;-webkit-user-select:none}
+.tri .face{fill:var(--surface);stroke:var(--ink);stroke-width:1.5}
+.tri .grid{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4;fill:none}
+.tri .handle{fill:var(--bg);stroke:var(--ink);stroke-width:2;cursor:grab}
+.tri text{font-family:var(--ff-num);font-size:13px;fill:var(--ink-2)}
+.beam{width:100%;max-width:360px;display:block}
+.beam .in{stroke:var(--ink-2);stroke-width:3}
+.beam .glass{fill:var(--surface);stroke:var(--ink);stroke-width:1.5}
+.ray{stroke-linecap:round;fill:none}
+.colorrows{display:grid;gap:12px;margin-top:6px}
+.crow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:10px 0;border-bottom:1px dashed var(--line)}
+.crow .n{font-size:19px}
+.crow .ef{font-size:13px;color:var(--ink-2)}
+.crow .rt{font-size:12px;color:var(--ink-3);font-family:var(--ff-num)}
+.slider{display:flex;align-items:center;gap:12px;margin-top:16px;font-size:13px;color:var(--ink-2)}
+.slider input{flex:1;accent-color:var(--ink)}
+
+/* 调 */
+.pipe{display:grid;grid-template-columns:auto auto auto auto auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.pipe .op{color:var(--ink-3);font-family:var(--ff-num)}
+.pipe .n{font-size:17px}
+.pipe .pv{font-size:12.5px;color:var(--ink-3);text-align:right}
+
+/* 抽 */
+.gacha{display:grid;grid-template-columns:200px minmax(0,1fr);gap:28px;align-items:start}
+.machine{width:200px}
+.machine svg{width:100%;display:block}
+.machine .shell{fill:var(--surface);stroke:var(--ink);stroke-width:1.5}
+.machine .cap{fill:none;stroke:var(--ink-3);stroke-width:1.3;stroke-dasharray:3 3}
+.machine.spin .caps{animation:shake .35s ease}
+@keyframes shake{25%{transform:translate(3px,-2px) rotate(2deg)}50%{transform:translate(-3px,1px) rotate(-2deg)}75%{transform:translate(2px,2px)}}
+.pullbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tray{display:flex;flex-wrap:wrap;gap:8px;min-height:96px;margin-top:4px}
+.pc{width:76px;height:96px;border:1.5px dashed var(--line-2);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11.5px;color:var(--ink-3);text-align:center;padding:6px;animation:flip .35s ease both}
+.pc.color{border-style:solid;border-color:var(--line-2)}
+.pc.color .n{font-size:12.5px}
+.pc.junk{border-style:solid;border-color:var(--ink-2);color:var(--ink-2)}
+.pc.relic{border:1.5px solid var(--ink);background:var(--ink);color:var(--bg);font-family:var(--ff-glyph);font-size:15px;line-height:1.25}
+.pc.relic small{font-family:var(--ff-ui);font-size:10.5px;opacity:.75}
+@keyframes flip{from{transform:rotateY(90deg);opacity:0}to{transform:none;opacity:1}}
+.relics{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.relic{padding:12px 14px;border:1.5px solid var(--ink);border-radius:8px}
+.relic .nm{font-family:var(--ff-glyph);font-size:19px;line-height:1.2}
+.relic .lv{float:right;font-family:var(--ff-num);font-size:12px;color:var(--ink-2);margin-top:4px}
+.relic .q{font-size:12px;color:var(--ink-3);margin-top:4px}
+.relic .ef{font-size:12.5px;color:var(--ink-2);margin-top:6px}
+.relic.unknown{border-style:dashed;border-color:var(--line-2)}
+.relic.unknown .nm{color:var(--ink-3);letter-spacing:.3em}
+.pips{display:flex;gap:3px;margin-top:8px}
+.pips i{width:14px;height:3px;background:var(--line);border-radius:1px}
+.pips i.on{background:var(--ink)}
+
+/* 呆 */
+.idlebox{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:center}
+.face{font-family:var(--ff-num);font-size:44px;text-align:center;padding:26px 0;border:1.5px dashed var(--line-2);border-radius:12px;white-space:nowrap;overflow:hidden}
+.bigbar{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin-top:10px}
+.bigbar i{display:block;height:100%;background:var(--ink)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;font-size:14px}
+.kv dt{color:var(--ink-3)}
+.kv dd{margin:0;font-family:var(--ff-num);font-variant-numeric:tabular-nums}
+
+/* 格 */
+.boardwrap{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:start}
+.board{display:grid;gap:6px;justify-content:start}
+.cell{width:62px;height:62px;border:1.5px dashed var(--line-2);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;transition:background .1s}
+.cell:hover{background:var(--surface-2)}
+.cell.f{border-style:solid;border-color:var(--ink)}
+.cell .g{font-size:26px;font-family:var(--ff-num)}
+.cell .v{font-size:10.5px;color:var(--ink-3);margin-top:5px;font-family:var(--ff-num)}
+.inv{display:grid;gap:8px}
+.piece{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 12px;border:1.5px solid var(--line-2);border-radius:8px;text-align:left}
+.piece[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.piece .g{font-size:24px;font-family:var(--ff-num);text-align:center}
+.piece .ds{font-size:12px;color:var(--ink-2);line-height:1.45}
+.piece .c{font-family:var(--ff-num);font-size:15px}
+
+/* 零 */
+.zero{display:flex;flex-wrap:wrap;gap:24px;align-items:center;padding:22px;border:1.5px solid var(--ink);border-radius:10px}
+.zero .btn{min-height:52px;font-size:17px;padding:8px 26px}
+.zero .gain .n{font-size:26px}
+
+/* 无 */
+.chs{display:grid;gap:10px}
+.ch{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 18px;padding:14px 16px;border:1.5px solid var(--line-2);border-radius:8px;align-items:center}
+.ch .nm{font-family:var(--ff-glyph);font-size:21px}
+.ch .ds{font-size:13px;color:var(--ink-2)}
+.ch .rw{font-size:12.5px;color:var(--ink-3)}
+.ch .btn{grid-row:1/span 3;grid-column:2}
+.ch.done{border-style:solid;border-color:var(--ink)}
+.ch.cur{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.stamp{font-size:12px;border:1px solid var(--ink);border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:3px}
+
+/* 透 */
+.tbig{font-size:54px;line-height:1.1;display:inline-block;min-width:3ch}
+
+/* 录 */
+.achs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.ach{padding:10px 12px;border:1.5px solid var(--ink);border-radius:8px;min-height:72px}
+.ach .nm{font-weight:600;font-size:13.5px}
+.ach .ds{font-size:11.5px;color:var(--ink-2);margin-top:3px;line-height:1.45}
+.ach.lock{border-style:dashed;border-color:var(--line-2)}
+.ach.lock .nm,.ach.lock .ds{color:var(--ink-3)}
+
+.rowline{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+textarea{width:100%;min-height:90px;font-family:var(--ff-num);font-size:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line-2);border-radius:6px;padding:8px}
+
+/* 提示与弹窗 */
+#toasts{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:50;display:grid;gap:8px;max-width:320px}
+.toast{padding:11px 14px;background:var(--ink);color:var(--bg);border-radius:8px;font-size:13px;line-height:1.45;animation:tin .3s ease}
+.toast b{display:block;font-size:14px}
+.toast .n{filter:none}
+@keyframes tin{from{transform:translateY(10px);opacity:0}}
+#modal{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--bg) 82%,transparent);display:grid;place-items:center;padding:20px}
+#modal[hidden]{display:none}
+.mbox{max-width:440px;width:100%;background:var(--surface);border:1.5px solid var(--ink);border-radius:12px;padding:24px}
+.mbox h3{font-family:var(--ff-glyph);font-weight:400;font-size:24px;margin-bottom:10px}
+.mbox .bd{font-size:14px;color:var(--ink-2);line-height:1.7}
+.mbox .ft{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+#ending{position:fixed;inset:0;z-index:70;background:var(--bg);display:grid;place-items:center;padding:24px;text-align:center}
+#ending[hidden]{display:none}
+#ending .lines{font-family:var(--ff-glyph);font-size:clamp(22px,4vw,34px);line-height:1.9}
+#ending .lines p{opacity:0;transition:opacity 1.6s}
+#ending .lines p.on{opacity:1}
+#ending .btn{margin-top:36px;opacity:0;transition:opacity 1s}
+#ending .btn.on{opacity:1}
+
+/* —— 手机 —— */
+@media (max-width:900px){
+  body{font-size:14.5px}
+  .top{padding:14px 16px 4px;gap:12px}
+  .top h1{font-size:26px}
+  #bank{padding:8px 16px 10px;gap:16px}
+  .bk .n{font-size:17px}
+  .bk.big .n{font-size:22px}
+  .main{display:block;padding-bottom:calc(62px + env(safe-area-inset-bottom,0px))}
+  #rail{position:fixed;left:0;right:0;bottom:0;z-index:25;flex-direction:row;justify-content:flex-start;overflow-x:auto;gap:2px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:var(--bg);border-right:0;border-top:1px solid var(--line);scrollbar-width:none}
+  #rail::-webkit-scrollbar{display:none}
+  .tab{flex:none}
+  #stage{border-right:0;border-bottom:1px solid var(--line);padding:16px 16px 10px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 16px;align-items:center}
+  #pocket{width:116px;height:116px;grid-row:1/span 2}
+  #pocket .glyph{font-size:44px}
+  .stagestats{margin-top:0;text-align:left}
+  .idlebar{margin:6px 0 0;width:100%}
+  #log{grid-column:1/-1;margin-top:10px;min-height:0;height:84px}
+  #panel{padding:20px 16px 40px}
+  .prism,.gacha,.idlebox,.boardwrap{grid-template-columns:minmax(0,1fr)}
+  .machine{margin:0 auto}
+  .gen .btn{min-width:112px}
+  .pipe{grid-template-columns:auto auto auto auto auto minmax(0,1fr);}
+  .pipe .btn{grid-column:1/-1}
+  .cell{width:56px;height:56px}
+  #toasts{left:16px;right:16px;max-width:none;bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+  .toast{padding:8px 12px;font-size:12.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <h1 id="title">棍母增量</h1>
+    <div id="ticker" aria-live="off"></div>
+  </header>
+  <div id="bank" aria-label="你拥有的棍母"></div>
+  <div class="main">
+    <nav id="rail" aria-label="页面"></nav>
+    <section id="stage" aria-label="口袋"></section>
+    <main id="panel"></main>
+  </div>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<div id="modal" hidden></div>
+<div id="ending" hidden>
+  <div>
+    <div class="lines">
+      <p>你有了白色的棍母。</p>
+      <p>红的，绿的，蓝的。</p>
+      <p>黄的，青的，品红的。</p>
+      <p>黑的。还有透明的。</p>
+      <p>把它们全部加在一起——</p>
+      <p>棍母。</p>
+    </div>
+    <button class="btn solid">继续摸</button>
+  </div>
+</div>
+<script>
+'use strict';
+/* ================== 棍母增量 · 逻辑层（无 DOM） ================== */
+const CAP = 1e300;
+const CURS = ['w','r','g','b','y','c','m','k','t'];
+const PRIMS = ['r','g','b'], SECS = ['y','c','m'];
+
+const GENS = [
+  {n:'空口袋',     d:'口袋里什么也没有。',             c:15,   p:0.25},
+  {n:'空钱包',     d:'比口袋更正式的什么也没有。',     c:150,  p:2},
+  {n:'空冰箱',     d:'打开，看一眼，关上。',           c:2000, p:16},
+  {n:'空头支票',   d:'承诺本身就是一种棍母。',         c:3e4,  p:130},
+  {n:'空集',       d:'∅。数学家认证的棍母。',          c:5e5,  p:1100},
+  {n:'真空',       d:'物理学家认证的棍母。',           c:1e7,  p:1e4},
+  {n:'热寂',       d:'宇宙的终点，大号的棍母。',       c:3e8,  p:1e5},
+  {n:'不可观测之物', d:'你看不见它，所以它是棍母。',    c:1e10, p:1.2e6},
+];
+const GEN_UA = [
+  ['口袋破洞','洞让口袋更空了。'],
+  ['钱包被偷','被偷之后，它空得更彻底。'],
+  ['冰箱断电','连冷气都没有了。'],
+  ['支票跳票','连承诺都没有了。'],
+  ['空集的空集','{∅} 严格来说不是空的。别告诉别人。'],
+  ['抽真空','把真空里剩下的那点真空也抽掉。'],
+  ['熵增','乱得一干二净。'],
+  ['闭上眼睛','看不见的东西，闭上眼更看不见了。'],
+];
+const GEN_UB = [
+  ['又破了一个洞','两个洞比一个洞更空。'],
+  ['连钱包也被偷了','现在你连空钱包都没有了。产量反而更高。'],
+  ['冰箱被搬走了','只剩地上那块印子。'],
+  ['老板跑路了','支票、公司、老板，统统没了。'],
+  ['公理化','空集被严格地定义为什么都没有。'],
+  ['绝对零度','连分子都懒得动了。'],
+  ['大撕裂','宇宙被撕成了更多的空。'],
+  ['视而不见','你学会了看见棍母，然后假装没看见。'],
+];
+
+const UPGS = [];
+function U(o){ UPGS.push(o); }
+// —— 摸 页 ——
+U({id:'c1', tab:'main', n:'两只手',   d:'摸的收获 ×2',                       cost:{w:40},   show:()=>S.clicks>=5||S.wTot>=40});
+U({id:'c2', tab:'main', n:'翻遍全身', d:'每次摸额外获得每秒产量的 2%',         cost:{w:1500}, show:()=>S.wTot>=500});
+U({id:'a1', tab:'main', n:'一无所有', d:'全部产量 ×1.5',                      cost:{w:1e4},  show:()=>S.wTot>=3e3});
+U({id:'c3', tab:'main', n:'掘地三尺', d:'摸的收获 ×3',                       cost:{w:6e4},  show:()=>S.wTot>=2e4});
+U({id:'prism', tab:'main', n:'三棱镜', d:'一束什么都没有的光，被分成三种什么都没有。解锁「光」。', cost:{w:2e5}, show:()=>S.wTot>=5e4});
+U({id:'a2', tab:'main', n:'空空如也', d:'全部产量 ×2',                        cost:{w:1e6},  show:()=>S.wTot>=3e5});
+U({id:'c4', tab:'main', n:'翻箱倒柜', d:'每次摸额外获得每秒产量的 3%',         cost:{w:3e7},  show:()=>S.wTot>=1e7});
+U({id:'a3', tab:'main', n:'四大皆空', d:'全部产量 ×2',                        cost:{w:1e9},  show:()=>S.wTot>=3e8});
+U({id:'c5', tab:'main', n:'上天入地', d:'摸的收获 ×5',                       cost:{w:1e11}, show:()=>S.wTot>=3e10});
+U({id:'a4', tab:'main', n:'万物皆空', d:'全部产量 ×3',                        cost:{w:1e12}, show:()=>S.wTot>=3e11});
+U({id:'a5', tab:'main', n:'色即是空', d:'每见过一种颜色，全部产量 ×1.2',       cost:{w:1e14}, show:()=>has('prism')&&S.wTot>=3e13});
+U({id:'a6', tab:'main', n:'空即是色', d:'[r][g][b] 的产出 ×3',                cost:{w:1e16}, show:()=>has('prism')&&S.wTot>=3e15});
+for (let i=0;i<GENS.length;i++){
+  U({id:'g'+i+'a', tab:'main', n:GEN_UA[i][0], d:'「'+GENS[i].n+'」产量 ×3。'+GEN_UA[i][1], cost:{w:GENS[i].c*40},  show:()=>S.gens[i]>=10, gen:i});
+  U({id:'g'+i+'b', tab:'main', n:GEN_UB[i][0], d:'「'+GENS[i].n+'」产量 ×3。'+GEN_UB[i][1], cost:{w:GENS[i].c*2e4}, show:()=>S.gens[i]>=50, gen:i});
+}
+// —— 光 页 ——
+U({id:'p1',  tab:'prism', n:'擦亮棱镜', d:'[r][g][b] 的产出 ×2',      cost:{r:25,g:25,b:25},       show:()=>has('prism')});
+U({id:'p2',  tab:'prism', n:'宽光谱',   d:'分光上限 50% → 80%',        cost:{r:150,g:150,b:150},    show:()=>has('p1')});
+U({id:'mix', tab:'prism', n:'调色盘',   d:'把两种颜色倒在一起，会得到第三种。解锁「调」。', cost:{r:400,g:400,b:400}, show:()=>has('p1')});
+U({id:'p3',  tab:'prism', n:'折射',     d:'[r][g][b] 的产出 ×3',      cost:{r:5e3,g:5e3,b:5e3},    show:()=>has('mix')});
+U({id:'p4',  tab:'prism', n:'色散',     d:'[r][g][b] 的效果再开 1.2 次方', cost:{r:1e6,g:1e6,b:1e6}, show:()=>has('p3')});
+// —— 调 页 ——
+U({id:'x1', tab:'mix', n:'搅拌棒',   d:'调出的 [y][c][m] ×2',   cost:{y:25,c:25,m:25},       show:()=>has('mix')});
+U({id:'x2', tab:'mix', n:'大染缸',   d:'调出的 [y][c][m] ×3',   cost:{y:3e3,c:3e3,m:3e3},    show:()=>has('x1')});
+U({id:'x3', tab:'mix', n:'万花筒',   d:'[r][g][b] 的产出 ×(1 + lg(1 + [y]+[c]+[m]))', cost:{y:3e5,c:3e5,m:3e5}, show:()=>has('x2')});
+// —— 呆 页 ——
+U({id:'cy1', tab:'idle', n:'深度发呆', d:'发呆蓄满的速度 ×2',             cost:{c:30},   show:()=>true});
+U({id:'cy2', tab:'idle', n:'半梦半醒', d:'摸一下只会让发呆进度减少 30%，而不是清零', cost:{c:300}, show:()=>has('cy1')});
+U({id:'cy3', tab:'idle', n:'灵魂出窍', d:'发呆倍率的平方根也作用于 [r][g][b] 的产出', cost:{c:3e3}, show:()=>has('cy2')});
+U({id:'cy4', tab:'idle', n:'白日做梦', d:'离线收益 +25%',                 cost:{c:3e4},  show:()=>has('cy3')});
+
+const UPG = {}; UPGS.forEach(u=>UPG[u.id]=u);
+const KEEP_PRISM = ['prism','p1','p2','p3','p4'];
+const KEEP_MIX = ['mix','x1','x2','x3'];
+
+const KUPS = [
+  {id:'k1',  n:'残影',     d:'归零后自带 10 个空口袋和 5 个空钱包', c:1},
+  {id:'k2',  n:'惯性',     d:'每秒自动摸 3 次，不会打断发呆',      c:3},
+  {id:'k3',  n:'余光',     d:'归零后保留三棱镜和「光」的升级',      c:10},
+  {id:'k4',  n:'宿醉',     d:'自动购买「摸」页的升级',              c:30},
+  {id:'k5',  n:'调色记忆', d:'归零后保留调色盘和「调」的升级',      c:100},
+  {id:'k6',  n:'自动空',   d:'自动购买空',                          c:300},
+  {id:'k7',  n:'自动倒',   d:'每 10 秒自动把三条管道各倒 25%',      c:1000},
+  {id:'k8',  n:'黑色幽默', d:'扔杂物的奖励：持续时间 ×2，即时收益 ×3', c:3000},
+  {id:'k9',  n:'深渊凝视', d:'归零获得 ×2',                         c:10000},
+  {id:'k10', n:'事件视界', d:'解锁「无」：更没有的挑战',            c:100000},
+  {id:'k11', n:'吸积盘',   d:'归零时保留 10% 的彩色棍母',           c:500000},
+  {id:'k12', n:'扩张',     d:'棋盘扩大为 5×5',                       c:3000000},
+  {id:'k13', n:'奇点',     d:'解锁「透」',                           c:2000000},
+];
+const KUP = {}; KUPS.forEach(u=>KUP[u.id]=u);
+function krCost(){ return 100*Math.pow(TUNE.krb, S.kr); }
+
+const TUPS = [
+  {id:'t1', n:'看不见的手', d:'自动摸 3 次/秒 → 10 次/秒',       c:10},
+  {id:'t2', n:'透明的透明', d:'[t] 的产出 ×3',                    c:50},
+  {id:'t3', n:'无形之力',   d:'全部产量 ×(1 + [t])',              c:200},
+  {id:'t4', n:'无中生有',   d:'归零获得 ×√(1 + [t])',             c:1000},
+  {id:'t5', n:'成为棍母',   d:'需要先完成全部五个「更没有」。',    c:10000},
+];
+const TUP = {}; TUPS.forEach(u=>TUP[u.id]=u);
+
+const RELICS = [null,
+  {n:'皇帝的新衣', q:'看不见的衣服，穿在看不见的人身上。', d:l=>'摸的收获 ×'+fx(1+0.3*l)},
+  {n:'竹篮打水',   q:'打了一整天，收获颇丰。',             d:l=>'空的产量 ×'+fx(1+0.3*l)},
+  {n:'画饼充饥',   q:'越画越饿，越饿越画。',               d:l=>'杂物出现得快 ×'+fx(1+0.3*l)},
+  {n:'望梅止渴',   q:'想一想就不渴了。',                   d:l=>'发呆加成 ×'+fx(1+0.2*l)},
+  {n:'空城计',     q:'城门大开，里面什么都没有。',         d:l=>'白色的价格 ÷'+(1+l)},
+  {n:'镜花水月',   q:'看得见，摸不着。',                   d:l=>'三原色产出 ×'+fx(1+0.5*l)},
+  {n:'水中捞月',   q:'捞上来的，全是棍母。',               d:l=>'调色产出 ×'+fx(1+0.5*l)},
+  {n:'空中楼阁',   q:'地基是棍母，楼也是棍母。',           d:l=>'棋盘效果 ×'+fx(1+0.2*l)},
+  {n:'子虚乌有',   q:'这件事从来没有发生过。',             d:l=>'归零获得 ×'+fx(1+0.25*l)},
+  {n:'一场空',     q:'到头来。',                           d:l=>'全部产量 ×'+fx(1+0.25*l)},
+  {n:'无字天书',   q:'读完了，受益匪浅。',                 d:l=>'抽到空物的概率 +'+l+'%，保底 -'+l},
+  {n:'黄粱一梦',   q:'一觉醒来，饭还没熟。',               d:l=>'离线收益 +'+(10*l)+'%'},
+];
+const RELIC_MAX = 5;
+
+const CHALS = [null,
+  {n:'没有手',       d:'不能摸，自动摸也不行。',                         goal:1e29, r:'发呆蓄满快 3 倍，发呆上限 ×1.5'},
+  {n:'没有颜色',     d:'所有颜色失效，所有数字都是同一种灰。你还分得清吗？', goal:1e28, r:'[r][g][b] 产出 ×3，效果再开 1.1 次方'},
+  {n:'没有空间',     d:'每种空最多只能有 10 个。',                       goal:1e25, r:'空每满 25 个的翻倍变成 ×2.2'},
+  {n:'没有退路',     d:'空的价格每个涨 35%。',                           goal:1e26, r:'空的价格增长 15% → 14%'},
+  {n:'连棍母都没有', d:'产量开 0.6 次方。',                              goal:1e15, r:'产量开 1.02 次方'},
+];
+
+const JUNK = ['一枚硬币','半块饼干','一张发票','一根头发','一颗纽扣','一张过期优惠券','一张电影票根','一把钥匙','一粒米','一张便利贴','一个瓶盖','一团毛絮','一颗糖','一节电池','一只耳机','一个打火机','一张没中的彩票','一片落叶','一枚回形针','一根皮筋','半截铅笔','一张收据','一颗瓜子','一根牙签'];
+
+const PIPES = [{a:'r',b:'g',o:'y'},{a:'g',b:'b',o:'c'},{a:'r',b:'b',o:'m'}];
+const PIECES = [null,{n:'洞',s:'○'},{n:'框',s:'□'},{n:'回声',s:'≋'}];
+
+/* ================== 状态 ================== */
+let S = null;
+const HOOK = {log(){}, toast(){}, junk(){}, ending(){}, pull(){}, reset(){}};
+
+function newState(){
+  return {
+    v:1,
+    w:0, r:0, g:0, b:0, y:0, c:0, m:0, k:0, t:0,
+    wTot:0, wAll:0, kTot:0, wBest:0,
+    gens:[0,0,0,0,0,0,0,0],
+    ups:{}, kups:{}, tups:{}, kr:0,
+    prism:{pct:0.3, wr:1/3, wg:1/3, wb:1/3},
+    pullsRun:0, pullsAll:0, pity:0, relics:{}, overflow:0,
+    idle:0,
+    board:{cells:new Array(25).fill(0), inv:[0,0,0,0], bought:0, deep:0},
+    clicks:0, clicksAll:0, autoAcc:0,
+    junk:{active:null, next:50, tossed:0},
+    buffs:{},
+    resets:0,
+    ch:{cur:0, done:{}},
+    ach:{}, unl:{w:true},
+    time:0, timeRun:0, pourT:0, buyT:0, achT:0,
+    last:Date.now(),
+    opt:{fmt:'cn', autoGen:true, autoUp:true, autoPour:true, theme:'auto', buy:1, confirm:true},
+    tabsSeen:{main:true, ach:true, set:true}, tab:'main',
+    ended:false, endSeen:false, titleClicks:0, warps:0, peek:false,
+  };
+}
+S = newState();
+
+/* ================== 工具 ================== */
+const CN_UNITS = ['','万','亿','兆','京','垓','秭','穰','沟','涧','正','载','极','恒河沙','阿僧祇','那由他','不可思议','无量大数'];
+function trimZ(s){ return s.indexOf('.')>=0 ? s.replace(/\.?0+$/,'') : s; }
+function fmt(n){
+  if (n!==n) return '0';
+  if (!isFinite(n)) return '∞';
+  if (n<0) return '-'+fmt(-n);
+  if (n<1e4){
+    if (n<10) return trimZ(n.toFixed(2));
+    if (n<100) return trimZ(n.toFixed(1));
+    return Math.floor(n).toString();
+  }
+  const e = Math.floor(Math.log10(n));
+  if ((S && S.opt && S.opt.fmt==='sci') || e>=72){
+    let m = n/Math.pow(10,e); if (m>=9.995){ m=1; return '1.00e'+(e+1); }
+    return m.toFixed(2)+'e'+e;
+  }
+  const u = Math.floor(e/4);
+  const v = n/Math.pow(10,u*4);
+  let s = v<10 ? v.toFixed(2) : v<100 ? v.toFixed(1) : v<1000 ? Math.floor(v).toString() : Math.floor(v).toString();
+  return s+CN_UNITS[u];
+}
+function fx(n){ return n<1000 ? trimZ(n.toFixed(2)) : fmt(n); } // 倍率
+function fmtTime(s){
+  s=Math.floor(s);
+  if (s<60) return s+' 秒';
+  if (s<3600) return Math.floor(s/60)+' 分 '+(s%60)+' 秒';
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60);
+  if (h<24) return h+' 小时 '+m+' 分';
+  return Math.floor(h/24)+' 天 '+(h%24)+' 小时';
+}
+function rand(a,b){ return a+Math.random()*(b-a); }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function has(id){ return !!S.ups[id]; }
+function kh(id){ return !!S.kups[id]; }
+function th(id){ return !!S.tups[id]; }
+function rl(i){ return S.relics[i]||0; }
+function inCh(n){ return S.ch.cur===n; }
+function chDone(n){ return !!S.ch.done[n]; }
+
+function add(cur, v){
+  if (!(v>0)) return;
+  S[cur] = Math.min(CAP, S[cur]+v);
+  if (cur==='w'){ S.wTot=Math.min(CAP,S.wTot+v); S.wAll=Math.min(CAP,S.wAll+v); if (S.wTot>S.wBest) S.wBest=S.wTot; }
+  if (!S.unl[cur]) { S.unl[cur]=true; HOOK.unlock && HOOK.unlock(cur); }
+}
+function canAfford(cost){ for (const k in cost) if (S[k] < cost[k]) return false; return true; }
+function pay(cost){ for (const k in cost) S[k] = Math.max(0, S[k]-cost[k]); }
+
+/* ================== 效果 ================== */
+function colorPow(){ return (has('p4')?1.2:1)*(chDone(2)?1.1:1); }
+function lgEff(x, s){ return Math.pow(1+s*Math.log10(1+x), colorPow()); }
+function redEff(){   if (inCh(2)) return 1; return lgEff(S.r, 0.5); }
+function greenEff(){ if (inCh(2)) return 1; return lgEff(S.g, 0.5); }
+function blueEff(){  if (inCh(2)) return 1; return lgEff(S.b, 0.5); }
+
+function idleMax(){
+  if (inCh(2)) return 1;
+  return 1 + 0.6*Math.log10(1+S.c)*(1+0.2*rl(4))*(chDone(1)?1.5:1);
+}
+function idleBuild(){ return 60/(has('cy1')?2:1)/(chDone(1)?3:1); }
+function idleFrac(){ return Math.min(1, S.idle/idleBuild()); }
+function idleMult(){ return 1+(idleMax()-1)*idleFrac(); }
+
+function boardSize(){ return kh('k12')?5:4; }
+function boardContribs(){
+  const n=boardSize(), cells=S.board.cells, out=new Array(25).fill(0);
+  const deep=1+0.25*S.board.deep;
+  const nb=(i)=>{ const r=Math.floor(i/5), c=i%5, a=[]; if(r>0)a.push(i-5); if(r<n-1)a.push(i+5); if(c>0)a.push(i-1); if(c<n-1)a.push(i+1); return a; };
+  for (let r=0;r<n;r++) for (let c=0;c<n;c++){
+    const i=r*5+c; if (cells[i]!==1) continue;
+    let h=0,f=0; for (const j of nb(i)){ if(cells[j]===1)h++; else if(cells[j]===2)f++; }
+    out[i]=(0.1+0.08*h)*Math.pow(1.8,f)*deep;
+  }
+  for (let r=0;r<n;r++) for (let c=0;c<n;c++){
+    const i=r*5+c; if (cells[i]!==3) continue;
+    let best=0, f=0; for (const j of nb(i)){ if (cells[j]===1 && out[j]>best) best=out[j]; if (cells[j]===2) f++; }
+    out[i]=best*Math.pow(1.8,f);
+  }
+  return out;
+}
+function boardMult(){
+  const arr=boardContribs(); let s=0; for (const v of arr) s+=v;
+  return 1+s*(1+0.2*rl(8));
+}
+function pieceCost(){ return 6*Math.pow(2.2, S.board.bought); }
+function deepCost(){ return 1e4*Math.pow(100, S.board.deep); }
+function boardFull(){
+  const n=boardSize(); for (let r=0;r<n;r++) for (let c=0;c<n;c++) if (!S.board.cells[r*5+c]) return false; return true;
+}
+
+function achCount(){ return Object.keys(S.ach).length; }
+function achMult(){ return Math.pow(1.03, achCount()); }
+const TUNE={kexp:0.3,keff:0.35,krb:10,mode:'soft',knee:15,s2:0.12};
+function blackEff(){ return Math.pow(1+S.kTot, TUNE.keff); }
+function tEff(){ return th('t3') ? 1+S.t : 1; }
+function buffM(type){ const b=S.buffs[type]; return b && b.t>0 ? b.m : 1; }
+function seenColors(){ let n=0; for (const c of ['r','g','b','y','c','m']) if (S.unl[c]) n++; return n; }
+
+function globalMult(){
+  let m=1;
+  if (has('a1')) m*=1.5; if (has('a2')) m*=2; if (has('a3')) m*=2; if (has('a4')) m*=3;
+  if (has('a5')) m*=Math.pow(1.2, seenColors());
+  m*=achMult()*greenEff()*idleMult()*boardMult()*(1+0.25*rl(10))*(1+0.02*S.overflow);
+  m*=blackEff()*Math.pow(2,S.kr)*tEff()*buffM('prod');
+  if (S.junk.active) m*=0.85;
+  return m;
+}
+function costGrowth(){ if (inCh(4)) return 1.35; return chDone(4)?1.14:1.15; }
+function costDiv(){ return blueEff()*(1+rl(5)); }
+function genMult(i){
+  let m=Math.pow(chDone(3)?2.2:2, Math.floor(S.gens[i]/25));
+  if (has('g'+i+'a')) m*=3; if (has('g'+i+'b')) m*=3;
+  return m*(1+0.3*rl(2));
+}
+function genProdEach(i){ return GENS[i].p*genMult(i); }
+function wpsBase(){ let b=0; for (let i=0;i<GENS.length;i++) b+=S.gens[i]*genProdEach(i); return b; }
+function wpsGross(){
+  let v=wpsBase()*globalMult();
+  if (inCh(5) && v>1) v=Math.pow(v,0.6);
+  if (chDone(5) && v>1) v=Math.pow(v,1.02);
+  return Math.min(v, CAP);
+}
+function prismMax(){ return has('p2')?0.8:0.5; }
+function prismPct(){ if (!has('prism')||inCh(2)) return 0; return Math.min(S.prism.pct, prismMax()); }
+function wpsNet(){ return wpsGross()*(1-prismPct()); }
+function prismEff(){
+  let e=1; if (has('p1')) e*=2; if (has('p3')) e*=3; if (has('a6')) e*=3;
+  e*=(1+0.5*rl(6)); if (chDone(2)) e*=3;
+  if (has('x3')) e*=1+Math.log10(1+S.y+S.c+S.m);
+  if (has('cy3')) e*=Math.sqrt(idleMult());
+  return e;
+}
+function colorRates(){
+  const D=wpsGross()*prismPct(); if (D<=0) return {r:0,g:0,b:0};
+  const e=prismEff(), p=S.prism;
+  return {r:e*Math.sqrt(D*p.wr), g:e*Math.sqrt(D*p.wg), b:e*Math.sqrt(D*p.wb)};
+}
+function mixEff(){ let e=1; if (has('x1')) e*=2; if (has('x2')) e*=3; return e*(1+0.5*rl(7)); }
+function pourPreview(i, frac){
+  const p=PIPES[i]; const a=S[p.a]*frac, b=S[p.b]*frac; if (a<1||b<1) return 0;
+  return mixEff()*Math.pow(a*b, 0.4);
+}
+function pour(i, frac){
+  frac=frac||0.5; const p=PIPES[i]; const a=S[p.a]*frac, b=S[p.b]*frac;
+  if (a<1||b<1) return 0;
+  const out=mixEff()*Math.pow(a*b,0.4);
+  S[p.a]-=a; S[p.b]-=b; add(p.o, out);
+  return out;
+}
+
+function clickValue(){
+  if (inCh(1)) return 0;
+  let base=1; if (has('c1')) base*=2; if (has('c3')) base*=3; if (has('c5')) base*=5;
+  const pct=(has('c2')?0.02:0)+(has('c4')?0.03:0);
+  let v=base*achMult()*blackEff()+pct*wpsGross();
+  v*=redEff()*(1+0.3*rl(1))*buffM('click');
+  return Math.min(v,CAP);
+}
+function autoRate(){ if (!kh('k2')||inCh(1)) return 0; return th('t1')?10:3; }
+
+/* ================== 购买 ================== */
+function genCostN(i,n){
+  const g=costGrowth(); const c0=GENS[i].c*Math.pow(g,S.gens[i])/costDiv();
+  return c0*(Math.pow(g,n)-1)/(g-1);
+}
+function genCap(i){ return inCh(3) ? Math.max(0,10-S.gens[i]) : Infinity; }
+function genMaxN(i){
+  const g=costGrowth(); const c0=GENS[i].c*Math.pow(g,S.gens[i])/costDiv();
+  let n=Math.floor(Math.log(1+S.w*(g-1)/c0)/Math.log(g));
+  if (!(n>0)) return 0;
+  while (n>0 && genCostN(i,n)>S.w) n--;
+  return Math.min(n, genCap(i));
+}
+function buyGen(i, n){
+  if (n==='max') n=genMaxN(i);
+  n=Math.min(n, genCap(i));
+  if (!(n>0)) return false;
+  const c=genCostN(i,n); if (c>S.w) return false;
+  checkBaige(c);
+  S.w-=c; S.gens[i]+=n; return true;
+}
+function upgCost(u){
+  const c={}; for (const k in u.cost) c[k]= (k==='w') ? u.cost[k]/costDiv() : u.cost[k];
+  return c;
+}
+function buyUpg(id){
+  const u=UPG[id]; if (!u||has(id)||!u.show()) return false;
+  const c=upgCost(u); if (!canAfford(c)) return false;
+  if (c.w) checkBaige(c.w);
+  pay(c); S.ups[id]=true; return true;
+}
+let AUTO=false;
+function checkBaige(c){ if (!AUTO && S.w>=100 && c>=0.99*S.w) unlockAch('baige'); }
+function buyKup(id){
+  const u=KUP[id]; if (!u||kh(id)||S.k<u.c) return false;
+  S.k-=u.c; S.kups[id]=true;
+  if (id==='k13') HOOK.log('黑洞的中心，什么都看不见。连黑都看不见。');
+  return true;
+}
+function buyKr(){ const c=krCost(); if (S.k<c) return false; S.k-=c; S.kr++; return true; }
+function buyTup(id){
+  const u=TUP[id]; if (!u||th(id)||S.t<u.c) return false;
+  if (id==='t5' && !allChDone()) return false;
+  S.t-=u.c; S.tups[id]=true;
+  if (id==='t5'){ S.ended=true; unlockAch('end'); HOOK.ending(); }
+  return true;
+}
+function allChDone(){ for (let i=1;i<=5;i++) if (!chDone(i)) return false; return true; }
+
+/* ================== 抽 ================== */
+function pullCostN(n){ return 10*Math.pow(1.5,S.pullsRun)*(Math.pow(1.5,n)-1)/0.5; }
+function relicChance(){ return 0.06+0.01*rl(11); }
+function pityMax(){ return 15-rl(11); }
+function relicCount(){ let n=0; for (let i=1;i<=12;i++) if (rl(i)>0) n++; return n; }
+function pull(n){
+  const c=pullCostN(n); if (S.y<c) return null;
+  S.y-=c; const res=[]; let relicsGot=0;
+  for (let j=0;j<n;j++){
+    S.pullsRun++; S.pullsAll++; S.pity++;
+    if (S.pity>=pityMax() || Math.random()<relicChance()){
+      if (S.pity>=pityMax()) unlockAch('pity');
+      S.pity=0; relicsGot++;
+      const idx=1+Math.floor(Math.random()*12);
+      if (rl(idx)<RELIC_MAX){ S.relics[idx]=rl(idx)+1; res.push({type:'relic', idx, lv:S.relics[idx]}); }
+      else { S.overflow++; res.push({type:'over', idx}); }
+      continue;
+    }
+    const r=Math.random();
+    if (r<0.62){ res.push({type:'blank'}); }
+    else if (r<0.87){
+      const pool=['r','g','b','y','c','m'].filter(x=>S.unl[x]);
+      const cur=pick(pool); let v=10;
+      if (PRIMS.includes(cur)) v+=colorRates()[cur]*60;
+      else { const pi=SECS.indexOf(cur); v+=pourPreview(pi,0.25); }
+      add(cur,v); res.push({type:'color', cur, v});
+    } else {
+      if (!S.junk.active){ spawnJunk(); res.push({type:'junk', n:S.junk.active.n}); }
+      else { res.push({type:'blank'}); }
+    }
+  }
+  if (relicsGot>=2) unlockAch('ou');
+  if (relicCount()>=12) unlockAch('allrelic');
+  for (let i=1;i<=12;i++) if (rl(i)>=RELIC_MAX) unlockAch('maxrelic');
+  return res;
+}
+
+/* ================== 格 ================== */
+function buyPiece(type){
+  const c=pieceCost(); if (S.m<c) return false;
+  S.m-=c; S.board.bought++; S.board.inv[type]++; return true;
+}
+function placePiece(i, type){
+  const n=boardSize(), r=Math.floor(i/5), c=i%5; if (r>=n||c>=n) return false;
+  const cells=S.board.cells;
+  if (cells[i]){ S.board.inv[cells[i]]++; cells[i]=0; if (!type) return true; }
+  if (!type || S.board.inv[type]<=0) return false;
+  S.board.inv[type]--; cells[i]=type;
+  if (boardFull()) unlockAch('board');
+  return true;
+}
+function buyDeep(){ const c=deepCost(); if (S.m<c) return false; S.m-=c; S.board.deep++; return true; }
+
+/* ================== 呆 ================== */
+function warpSecs(spent){ return 30*Math.log10(1+spent); }
+function doWarp(){
+  if (S.c<10) return 0;
+  const spent=S.c*0.5; S.c-=spent;
+  const sec=warpSecs(spent);
+  const gained=produce(sec);
+  S.warps++; unlockAch('warp');
+  HOOK.log('你神游了 '+fmtTime(sec)+'。回过神来，多了 [w:'+gained+']。');
+  return sec;
+}
+
+/* ================== 杂物 ================== */
+function spawnJunk(){
+  S.junk.active={n:pick(JUNK), ttl:15, x:Math.random(), y:Math.random()};
+  HOOK.junk(true);
+  HOOK.log('你摸到了……'+S.junk.active.n+'？这不是棍母。有了东西，产量 ×0.85。');
+}
+function tossJunk(){
+  const j=S.junk.active; if (!j) return null;
+  S.junk.active=null; S.junk.tossed++; S.junk.next=rand(45,110);
+  HOOK.junk(false);
+  unlockAch('junk1'); if (S.junk.tossed>=50) unlockAch('junk50');
+  const dm=kh('k8')?2:1, im=kh('k8')?3:1;
+  const kinds=['prod','prod','click','instant']; if (S.unl.r) kinds.push('color');
+  const k=pick(kinds); let msg='';
+  if (k==='prod'){ S.buffs.prod={m:4,t:30*dm,T:30*dm}; msg='你扔掉了'+j.n+'。断舍离：产量 ×4，持续 '+(30*dm)+' 秒。'; }
+  else if (k==='click'){ S.buffs.click={m:7,t:15*dm,T:15*dm}; msg='你扔掉了'+j.n+'。两袖清风：摸的收获 ×7，持续 '+(15*dm)+' 秒。'; }
+  else if (k==='instant'){ const v=Math.max(10,wpsNet()*120*im); add('w',v); msg='你扔掉了'+j.n+'。一身轻松：+[w:'+v+']'; }
+  else { const cr=colorRates(); for (const c of PRIMS) add(c, cr[c]*120*im+10); msg='你扔掉了'+j.n+'。六根清净：[r][g][b] 各多出 '+(2*im)+' 分钟的产出。'; }
+  HOOK.log(msg);
+  return k;
+}
+function junkInterval(){ return 1/(1+0.3*rl(3)); }
+
+/* ================== 点击 ================== */
+const CLICK_LINES = ['你摸了摸口袋。棍母。','左边口袋：棍母。右边口袋：棍母。','你翻了翻沙发缝。棍母。','你在床底下摸到了棍母。','你伸手进外套内袋。很深，很空。','你向朋友借点东西，他递给你棍母。','你认真地摸了一下。是棍母，很纯。','你闭着眼摸了一下。睁开眼，还是棍母。','你摸到一张白纸。仔细一看，上面画着棍母。','你摸到了自己的手。不算。','你在抽屉最里面摸到了棍母。和上次一样。'];
+function doClick(){
+  if (inCh(1)){ HOOK.log('你没有手。'); return 0; }
+  const v=clickValue(); add('w',v); S.clicks++; S.clicksAll++;
+  if (has('cy2')) S.idle*=0.7; else S.idle=0;
+  if (Math.random()<0.07) HOOK.log(pick(CLICK_LINES));
+  return v;
+}
+
+/* ================== 归零 ================== */
+function kGainMult(){ return (kh('k9')?2:1)*(1+0.25*rl(9))*(th('t4')?Math.sqrt(1+S.t):1); }
+function kGain(){ if (S.wTot<1e10) return 0; const L=Math.log10(S.wTot); const x=L-10; const base = TUNE.mode==='soft' ? Math.pow(10, x<=TUNE.knee ? TUNE.kexp*x : TUNE.kexp*TUNE.knee + TUNE.s2*(x-TUNE.knee)) : TUNE.mode==='pow' ? Math.pow(10,x*TUNE.kexp) : Math.pow(L-9,TUNE.kexp); return Math.floor(base*kGainMult()); }
+function canReset(){ return kGain()>=1 || S.ch.cur>0; }
+function doReset(enter){
+  const gain=kGain();
+  S.k=Math.min(CAP,S.k+gain); S.kTot=Math.min(CAP,S.kTot+gain); if (gain>0) S.unl.k=true;
+  S.resets++;
+  const keep={};
+  for (const id in S.ups){
+    if ((kh('k3')&&KEEP_PRISM.includes(id))||(kh('k5')&&KEEP_MIX.includes(id))) keep[id]=true;
+  }
+  const keepFrac=kh('k11')?0.1:0;
+  S.w=0; S.wTot=0;
+  for (const c of ['r','g','b','y','c','m']) S[c]=S[c]*keepFrac;
+  S.gens=[0,0,0,0,0,0,0,0];
+  if (kh('k1')){ S.gens[0]=10; S.gens[1]=5; }
+  S.ups=keep; S.pullsRun=0; S.buffs={}; S.timeRun=0; S.clicks=0;
+  S.junk.active=null; HOOK.junk(false);
+  S.ch.cur=enter||0;
+  if (S.resets>=1) unlockAch('reset1'); if (S.resets>=10) unlockAch('reset10'); if (S.resets>=100) unlockAch('reset100');
+  HOOK.reset(gain);
+  return gain;
+}
+
+/* ================== 成就 ================== */
+const ACHS = [
+  {id:'first',  n:'一无所有',     d:'第一次摸。摸到了棍母。',          c:()=>S.clicksAll>=1},
+  {id:'c100',   n:'两手空空',     d:'摸 100 次。',                     c:()=>S.clicksAll>=100},
+  {id:'c1k',    n:'点了个寂寞',   d:'摸 1000 次。',                    c:()=>S.clicksAll>=1000},
+  {id:'c10k',   n:'摸鱼达人',     d:'摸 10000 次，自动的也算。',       c:()=>S.clicksAll>=1e4},
+  {id:'w1k',    n:'空空如也',     d:'拥有 [w:1000]。',                 c:()=>S.w>=1e3},
+  {id:'w1m',    n:'一贫如洗',     d:'拥有 [w:1e6]。',                  c:()=>S.w>=1e6},
+  {id:'w1y',    n:'亿点点',       d:'拥有 [w:1e8]。',                  c:()=>S.w>=1e8},
+  {id:'w1z',    n:'数不过来',     d:'拥有 [w:1e12]。',                 c:()=>S.w>=1e12},
+  {id:'w20',    n:'身无长物',     d:'拥有 [w:1e20]。',                 c:()=>S.w>=1e20},
+  {id:'w28',    n:'一穷二白',     d:'拥有 [w:1e28]。',                 c:()=>S.w>=1e28},
+  {id:'w36',    n:'空无一物',     d:'拥有 [w:1e36]。',                 c:()=>S.w>=1e36},
+  {id:'w44',    n:'无量',         d:'拥有 [w:1e44]。',                 c:()=>S.w>=1e44},
+  {id:'pocket', n:'囊空如洗',     d:'拥有 50 个空口袋。',              c:()=>S.gens[0]>=50},
+  {id:'allgen', n:'家徒四壁',     d:'每种空都至少有 1 个。',           c:()=>S.gens.every(x=>x>0)},
+  {id:'unobs',  n:'熟视无睹',     d:'拥有 100 个不可观测之物。',       c:()=>S.gens[7]>=100},
+  {id:'junk1',  n:'断舍离',       d:'第一次扔掉杂物。',                c:()=>false},
+  {id:'junk50', n:'收破烂的',     d:'扔掉 50 个杂物。',                c:()=>false},
+  {id:'prism1', n:'七彩棍母',     d:'第一次把棍母分成颜色。',          c:()=>S.unl.r},
+  {id:'six',    n:'五颜六色',     d:'同时拥有六种颜色的棍母。',        c:()=>['r','g','b','y','c','m'].every(x=>S[x]>=1)},
+  {id:'pity',   n:'非酋',         d:'抽到保底。',                      c:()=>false},
+  {id:'ou',     n:'欧皇',         d:'一次十连出两个以上空物。',        c:()=>false},
+  {id:'allrelic', n:'我全都要',   d:'集齐 12 种空物。',                c:()=>false},
+  {id:'maxrelic', n:'满级的空',   d:'任意一个空物升到满级。',          c:()=>false},
+  {id:'idlemax', n:'发呆大师',    d:'发呆蓄满一次。',                  c:()=>S.unl.c && S.c>=1 && idleFrac()>=1},
+  {id:'bailan', n:'摆烂',         d:'连续 10 分钟没有亲手摸。',         c:()=>S.idle>=600},
+  {id:'warp',   n:'神游太虚',     d:'神游一次。',                      c:()=>false},
+  {id:'board',  n:'强迫症',       d:'把棋盘填满。',                    c:()=>false},
+  {id:'reset1', n:'归零',         d:'第一次归零。',                    c:()=>false},
+  {id:'reset10', n:'从头再来',    d:'归零 10 次。',                    c:()=>false},
+  {id:'reset100', n:'轮回',       d:'归零 100 次。',                   c:()=>false},
+  {id:'ch1',    n:'更没有了',     d:'完成任意一个「更没有」。',        c:()=>Object.keys(S.ch.done).length>=1},
+  {id:'colorless', n:'色盲',      d:'完成「没有颜色」。',              c:()=>chDone(2)},
+  {id:'chall',  n:'一无是处',     d:'完成全部「更没有」。',            c:()=>allChDone()},
+  {id:'hour',   n:'打工人',       d:'累计游戏 1 小时。',               c:()=>S.time>=3600},
+  {id:'baige',  n:'白给',         d:'一次花掉 99% 以上的白色。',        c:()=>false, secret:true},
+  {id:'seek',   n:'找棍母',       d:'连点标题 10 次。这里什么都没有。', c:()=>false, secret:true},
+  {id:'see',    n:'眯眼',         d:'试图看清透明的数字。',            c:()=>false, secret:true},
+  {id:'end',    n:'成为棍母',     d:'结局。',                          c:()=>false},
+];
+function unlockAch(id){
+  if (S.ach[id]) return; S.ach[id]=Date.now();
+  const a=ACHS.find(x=>x.id===id); if (a) HOOK.toast(a);
+}
+function checkAchs(){ for (const a of ACHS) if (!S.ach[a.id] && a.c()) unlockAch(a.id); }
+
+/* ================== 透 ================== */
+function tRate(){ if (!kh('k13')) return 0; const l=Math.log10(1+S.kTot); return l*l/40*(th('t2')?3:1); }
+
+/* ================== 生产 ================== */
+function produce(sec){
+  const net=wpsNet(); const before=S.w;
+  add('w', net*sec);
+  if (prismPct()>0){ const cr=colorRates(); add('r',cr.r*sec); add('g',cr.g*sec); add('b',cr.b*sec); }
+  const ar=autoRate(); if (ar>0) add('w', clickValue()*ar*sec);
+  if (kh('k13')) add('t', tRate()*sec);
+  return S.w-before;
+}
+
+function tick(dt, offline){
+  S.time+=dt; S.timeRun+=dt; S.idle+=dt;
+  produce(dt);
+  const ar=autoRate(); if (ar>0){ S.autoAcc+=ar*dt; const n=Math.floor(S.autoAcc); if (n>0){ S.autoAcc-=n; S.clicksAll+=n; S.clicks+=n; } }
+  for (const k in S.buffs){ S.buffs[k].t-=dt; if (S.buffs[k].t<=0) delete S.buffs[k]; }
+  if (!offline){
+    if (S.junk.active){ S.junk.active.ttl-=dt; if (S.junk.active.ttl<=0){ HOOK.log(S.junk.active.n+'自己消失了。又是棍母了。'); S.junk.active=null; S.junk.next=rand(45,110); HOOK.junk(false);} }
+    else if (S.wAll>=200){ S.junk.next-=dt/junkInterval(); if (S.junk.next<=0) spawnJunk(); }
+  }
+  // 自动化
+  S.buyT+=dt;
+  if (S.buyT>=0.5){
+    S.buyT=0;
+    AUTO=true;
+    if (kh('k4') && S.opt.autoUp) for (const u of UPGS) if (u.tab==='main' && !has(u.id) && u.show()) buyUpg(u.id);
+    if (kh('k6') && S.opt.autoGen) for (let i=GENS.length-1;i>=0;i--) buyGen(i,'max');
+    AUTO=false;
+  }
+  if (kh('k7') && S.opt.autoPour && has('mix')){
+    S.pourT+=dt; if (S.pourT>=10){ S.pourT=0; for (let i=0;i<3;i++) pour(i,0.25); }
+  }
+  // 挑战完成
+  if (S.ch.cur && !chDone(S.ch.cur) && S.wTot>=CHALS[S.ch.cur].goal){
+    S.ch.done[S.ch.cur]=true;
+    HOOK.log('你完成了「'+CHALS[S.ch.cur].n+'」。现在可以归零离开了。');
+    HOOK.toast({n:'完成「'+CHALS[S.ch.cur].n+'」', d:CHALS[S.ch.cur].r});
+  }
+  S.achT+=dt; if (S.achT>=0.5){ S.achT=0; checkAchs(); }
+}
+
+function offlineEff(){ return Math.min(1, 0.5+0.1*rl(12)+(has('cy4')?0.25:0)); }
+
+/* ================== 存档 ================== */
+function serialize(){ S.last=Date.now(); return JSON.stringify(S); }
+function deserialize(str){
+  const o=JSON.parse(str); const base=newState();
+  const merge=(a,b)=>{ for (const k in b){ if (b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==='object'&&!Array.isArray(a[k])) merge(a[k],b[k]); else a[k]=b[k]; } };
+  merge(base,o);
+  for (const c of CURS){ if (!(base[c]>=0)) base[c]=0; }
+  if (!Array.isArray(base.gens)||base.gens.length!==8) base.gens=[0,0,0,0,0,0,0,0];
+  if (!Array.isArray(base.board.cells)||base.board.cells.length!==25) base.board.cells=new Array(25).fill(0);
+  return base;
+}
+
+if (typeof module!=='undefined') module.exports = {TUNE, get S(){return S;}, set S(v){S=v;}, newState, tick, doClick, buyGen, buyUpg, buyKup, buyKr, buyTup, pull, pour, pourPreview, buyPiece, placePiece, buyDeep, doWarp, tossJunk, doReset, kGain, canReset, wpsGross, wpsNet, colorRates, clickValue, genMaxN, genCostN, upgCost, UPGS, UPG, KUPS, TUPS, GENS, CHALS, ACHS, has, kh, th, rl, pullCostN, pieceCost, deepCost, boardMult, idleMult, idleMax, fmt, krCost, allChDone, HOOK, chDone, boardSize, genProdEach, redEff, greenEff, blueEff, prismEff, tRate, relicCount, achCount, autoRate, inCh, boardFull};
+
+/* ================== 棍母增量 · 界面层 ================== */
+const SAVE_KEY = 'gunmu-incremental-v1';
+const $ = (s, r) => (r||document).querySelector(s);
+function h(tag, attrs, html){
+  const e=document.createElement(tag);
+  if (attrs) for (const k in attrs){
+    const v=attrs[k];
+    if (k==='class') e.className=v;
+    else if (k.slice(0,2)==='on') e.addEventListener(k.slice(2), v);
+    else if (v!==false && v!==undefined && v!==null) e.setAttribute(k, v===true?'':v);
+  }
+  if (html!==undefined) e.innerHTML=html;
+  return e;
+}
+function setH(el, html){ if (el && el._h!==html){ el._h=html; el.innerHTML=html; } }
+function setT(el, t){ if (el && el._t!==t){ el._t=t; el.textContent=t; } }
+function setCls(el, c, on){ if (el && el.classList.contains(c)!==!!on) el.classList.toggle(c, !!on); }
+function N(c, v){ return '<span class="n n-'+c+'" title="棍母">'+fmt(v)+'</span>'; }
+function rich(s){
+  return String(s).replace(/\[([wrgbycmkt])(?::([^\]]+))?\]/g, (m,c,v)=> v===undefined
+    ? '<i class="dot d-'+c+'" title="棍母"></i>'
+    : '<span class="n n-'+c+'" title="棍母">'+fmt(+v)+'</span>');
+}
+function costHTML(cost){ return Object.keys(cost).map(k=>N(k,cost[k])).join(' '); }
+
+/* ---------- 日志、提示、弹窗 ---------- */
+const LOG_MAX = 40;
+function addLog(msg){
+  const box=$('#log'); if (!box) return;
+  const p=h('p',null,rich(msg)); box.prepend(p);
+  while (box.children.length>LOG_MAX) box.lastChild.remove();
+}
+function toast(a){
+  const t=h('div',{class:'toast',role:'status'},'<b>'+(a.n.indexOf('完成')===0?a.n:'成就：'+a.n)+'</b>'+rich(a.d||''));
+  const box=$('#toasts'); box.appendChild(t);
+  while (box.children.length>3) box.firstChild.remove();
+  setTimeout(()=>{ t.style.transition='opacity .4s'; t.style.opacity='0'; setTimeout(()=>t.remove(),450); }, 4200);
+}
+function modal(title, body, buttons){
+  const m=$('#modal'); m.innerHTML='';
+  const box=h('div',{class:'mbox',role:'dialog','aria-modal':'true','aria-label':title});
+  box.appendChild(h('h3',null,title));
+  box.appendChild(h('div',{class:'bd'},body));
+  const ft=h('div',{class:'ft'});
+  (buttons||[{t:'好',solid:true}]).forEach(b=>{
+    ft.appendChild(h('button',{class:'btn'+(b.solid?' solid':''),onclick:()=>{ m.hidden=true; m.innerHTML=''; b.f&&b.f(); }},b.t));
+  });
+  box.appendChild(ft); m.appendChild(box); m.hidden=false;
+  const first=ft.querySelector('button'); first&&first.focus();
+}
+
+/* ---------- 挂钩 ---------- */
+HOOK.log = addLog;
+HOOK.toast = toast;
+HOOK.junk = (on)=>renderJunk(on);
+HOOK.unlock = (c)=>{
+  if (c==='w') return;
+  if (c==='k') addLog('你第一次看见了这种颜色的棍母：[k]。比黑还黑。');
+  else if (c==='t') addLog('你第一次……没看见这种颜色的棍母：[t]。');
+  else addLog('你第一次看见了这种颜色的棍母：[' +c+ ']');
+  freshBank[c]=true;
+};
+HOOK.reset = (gain)=>{
+  if (gain>0) addLog('归零。一切都没了，换来了 [k:'+gain+']。');
+  else addLog('归零。一切都没了。');
+  dirtyAll();
+};
+HOOK.ending = ()=>playEnding();
+
+/* ---------- 顶栏 ---------- */
+const TICKS = [
+  '今日棍母指数：0，较昨日持平。',
+  '气象台：明天局部地区有棍母，市民出门无需携带任何东西。',
+  '有网友晒出全部家当：棍母。评论区：楼主好富。',
+  '专家建议多囤棍母：它永远不会贬值，因为它本来就不值。',
+  '棍母交易所今日成交额：棍母。',
+  '问：棍母和什么都没有有什么区别？答：有区别就不是棍母了。',
+  '科学家在真空中发现了大量棍母。',
+  '据统计，你口袋里 100% 的空间被棍母占据。',
+  '限时活动：充值 0 元，即可获得棍母。',
+  '本游戏不含任何内容，请放心游玩。',
+  '又是什么都没有发生的一天。',
+  '外卖到了，打开一看：棍母。',
+  '老板说今年年终奖是棍母。你说：那很好。',
+  '今日运势：宜摸，忌找。找也找不到。',
+  '一张白纸被送进美术馆。标题：《棍母》。',
+  '温馨提示：看见什么都没有的时候，请说「看见了棍母」。',
+  '棍母不会过期。它从来没有生效过。',
+  '你的棍母余额不足？不可能，它一直是这么多。',
+];
+let tickIdx = Math.floor(Math.random()*TICKS.length);
+function rotateTicker(){
+  const el=$('#ticker'); el.style.opacity='0';
+  setTimeout(()=>{ tickIdx=(tickIdx+1)%TICKS.length; el.textContent=TICKS[tickIdx]; el.style.opacity='1'; }, 500);
+}
+
+/* ---------- 钱包条 ---------- */
+const BANK_ORDER = ['w','r','g','b','y','c','m','k','t'];
+const freshBank = {};
+const bankEls = {};
+function bankVisible(c){
+  if (c==='w') return true;
+  if (c==='k') return S.kTot>0 || S.k>0;
+  if (c==='t') return kh('k13');
+  return !!S.unl[c];
+}
+function buildBank(){
+  const bank=$('#bank'); bank.innerHTML='';
+  for (const c of BANK_ORDER){
+    const el=h('div',{class:'bk'+(c==='w'?' big':'')});
+    el.innerHTML='<span class="n n-'+c+'" title="棍母"></span><small></small>';
+    bankEls[c]={el, n:el.firstChild, s:el.lastChild};
+    bank.appendChild(el);
+  }
+}
+function updateBank(){
+  const cr = prismPct()>0 ? colorRates() : {r:0,g:0,b:0};
+  for (const c of BANK_ORDER){
+    const b=bankEls[c]; const vis=bankVisible(c);
+    if (b.el.hidden===vis) b.el.hidden=!vis;
+    if (!vis) continue;
+    setT(b.n, fmt(S[c]));
+    let sub='';
+    if (c==='w') sub='+'+fmt(wpsNet()+clickValue()*autoRate())+' / 秒';
+    else if (PRIMS.includes(c)) sub = cr[c]>0 ? '+'+fmt(cr[c])+' / 秒' : '';
+    else if (c==='k') sub='全部 ×'+fx(blackEff());
+    else if (c==='t') sub='';
+    setT(b.s, sub);
+    if (freshBank[c]){ freshBank[c]=false; b.el.classList.remove('new'); void b.el.offsetWidth; b.el.classList.add('new'); }
+  }
+}
+
+/* ---------- 舞台 ---------- */
+let stageEls = {};
+function buildStage(){
+  const st=$('#stage');
+  st.innerHTML='';
+  const pocket=h('button',{id:'pocket','aria-label':'摸一下口袋'},'<span class="ring"></span><span class="glyph">摸</span>');
+  pocket.addEventListener('click', onPocket);
+  st.appendChild(pocket);
+  const ss=h('div',{class:'stagestats'});
+  ss.innerHTML='<div class="sv1"></div><div class="sv2"></div><div class="sv3 muted small"></div><div class="idlebar" hidden><i></i></div>';
+  st.appendChild(ss);
+  st.appendChild(h('div',{id:'log','aria-live':'polite'}));
+  st.appendChild(h('div',{id:'junklayer'}));
+  stageEls={pocket, ring:pocket.firstChild, v1:ss.querySelector('.sv1'), v2:ss.querySelector('.sv2'), v3:ss.querySelector('.sv3'), bar:ss.querySelector('.idlebar'), barI:ss.querySelector('.idlebar i')};
+}
+let ringAngle=0;
+function updateStage(dt){
+  const nohand=inCh(1);
+  setCls(stageEls.pocket,'nohand',nohand);
+  setH(stageEls.v1, nohand ? '你没有手。' : '每次 +'+N('w',clickValue()));
+  setH(stageEls.v2, '每秒 +'+N('w',wpsNet()));
+  const ar=autoRate();
+  setT(stageEls.v3, ar>0 ? '自动摸 '+ar+' 次/秒' : (S.clicksAll<3 ? '点一下中间那个圈。' : ''));
+  const showIdle=S.unl.c && idleMax()>1.0001;
+  if (stageEls.bar.hidden===showIdle) stageEls.bar.hidden=!showIdle;
+  if (showIdle) stageEls.barI.style.width=(idleFrac()*100).toFixed(1)+'%';
+  // 发呆时，虚线圈慢慢转
+  if (!reduceMotion){
+    ringAngle=(ringAngle+dt*(4+idleFrac()*40))%360;
+    stageEls.ring.style.transform='rotate('+ringAngle.toFixed(1)+'deg)';
+  }
+}
+const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function onPocket(e){
+  const v=doClick();
+  if (v>0){
+    let x=e.clientX, y=e.clientY;
+    if (!x && !y){ const r=stageEls.pocket.getBoundingClientRect(); x=r.left+r.width/2; y=r.top+r.height/2; }
+    floater(x+(Math.random()*30-15), y-10, '+'+N('w',v));
+  }
+}
+function floater(x,y,html){
+  if (reduceMotion) return;
+  const f=h('div',{class:'floater'},html); f.style.left=x+'px'; f.style.top=y+'px';
+  document.body.appendChild(f); setTimeout(()=>f.remove(),900);
+}
+function renderJunk(on){
+  const layer=$('#junklayer'); if (!layer) return;
+  layer.innerHTML='';
+  if (!on || !S.junk.active) return;
+  const j=S.junk.active;
+  const el=h('button',{class:'junk','aria-label':'扔掉'+j.n},'<b>'+j.n+'</b><span>点一下扔掉</span>');
+  el.style.left=(8+j.x*62)+'%'; el.style.top=(10+j.y*55)+'%';
+  el.addEventListener('click',(e)=>{ e.stopPropagation(); tossJunk(); });
+  layer.appendChild(el);
+}
+
+/* ---------- 标签页 ---------- */
+const TABS = [
+  {id:'main',  g:'摸', t:'摸口袋', show:()=>true},
+  {id:'prism', g:'光', t:'分光',   show:()=>has('prism')||!!S.unl.r},
+  {id:'mix',   g:'调', t:'调色',   show:()=>has('mix')||!!(S.unl.y||S.unl.c||S.unl.m)},
+  {id:'gacha', g:'抽', t:'扭蛋',   show:()=>!!S.unl.y},
+  {id:'idle',  g:'呆', t:'发呆',   show:()=>!!S.unl.c},
+  {id:'board', g:'格', t:'棋盘',   show:()=>!!S.unl.m},
+  {id:'zero',  g:'零', t:'归零',   show:()=>S.wBest>=1e9||S.resets>0||S.kTot>0},
+  {id:'chal',  g:'无', t:'更没有', show:()=>kh('k10')},
+  {id:'trans', g:'透', t:'透明',   show:()=>kh('k13')},
+  {id:'ach',   g:'录', t:'成就',   show:()=>true},
+  {id:'set',   g:'设', t:'设置',   show:()=>true},
+];
+const tabBtns={};
+function buildRail(){
+  const rail=$('#rail'); rail.innerHTML=''; rail.setAttribute('role','tablist');
+  for (const t of TABS){
+    const b=h('button',{class:'tab',role:'tab',title:t.t,'aria-label':t.t,'aria-selected':'false'},t.g);
+    b.addEventListener('click',()=>selectTab(t.id));
+    tabBtns[t.id]=b; rail.appendChild(b);
+  }
+}
+function updateRail(){
+  for (const t of TABS){
+    const vis=t.show(); const b=tabBtns[t.id];
+    if (b.hidden===vis) b.hidden=!vis;
+    setCls(b,'fresh', vis && !S.tabsSeen[t.id]);
+  }
+  if (!TABS.find(t=>t.id===S.tab).show()) selectTab('main');
+}
+function selectTab(id){
+  S.tab=id; S.tabsSeen[id]=true;
+  for (const t of TABS){ tabBtns[t.id].setAttribute('aria-selected', t.id===id?'true':'false'); }
+  for (const k in PANES){ setCls(PANES[k].el,'on',k===id); }
+  const p=PANES[id]; if (p){ p.dirty=true; p.update(true); }
+  if (window.innerWidth<=900){ const panel=$('#panel'); if (panel && document.activeElement && document.activeElement.classList.contains('tab')) panel.scrollIntoView({block:'start',behavior:reduceMotion?'auto':'smooth'}); }
+}
+
+/* ---------- 面板 ---------- */
+const PANES = {};
+function pane(id, title, intro){
+  const el=h('section',{class:'pane',id:'pane-'+id,role:'tabpanel','aria-label':title});
+  el.appendChild(h('header',null,'<h2>'+title+'</h2>'+(intro?'<p>'+intro+'</p>':'')));
+  $('#panel').appendChild(el);
+  return el;
+}
+function sect(parent, title, extra){
+  const s=h('div',{class:'sect'});
+  const hh=h('h3',null,title); if (extra) hh.appendChild(extra);
+  s.appendChild(hh); parent.appendChild(s); return s;
+}
+function dirtyAll(){ for (const k in PANES) PANES[k].dirty=true; }
+
+/* 升级卡片（通用） */
+function upgList(container, tab){
+  let key='';
+  return function(force){
+    const list=UPGS.filter(u=>u.tab===tab && !has(u.id) && u.show());
+    const k=list.map(u=>u.id).join(',');
+    if (k!==key || force){
+      key=k; container.innerHTML='';
+      if (!list.length) container.appendChild(h('div',{class:'empty'}, tab==='main' ? '暂时没有可买的升级。多摸一会儿。' : '这里的升级都买完了。'));
+      for (const u of list){
+        const b=h('button',{class:'card','data-id':u.id},'<span class="nm">'+u.n+'</span><span class="ds">'+rich(u.d)+'</span><span class="cs"></span>');
+        b.addEventListener('click',()=>{ if (buyUpg(u.id)){ addLog('买下了「'+u.n+'」。'); key=''; } });
+        container.appendChild(b);
+      }
+    }
+    for (const b of container.querySelectorAll('.card[data-id]')){
+      const u=UPG[b.dataset.id]; const c=upgCost(u);
+      setCls(b,'no',!canAfford(c));
+      setH(b.querySelector('.cs'), costHTML(c));
+    }
+  };
+}
+
+/* ===== 摸 ===== */
+function buildMain(){
+  const el=pane('main','摸','口袋里什么也没有。那就摸一下，看看能摸出多少什么也没有。');
+  const seg=h('div',{class:'seg',role:'group','aria-label':'一次买几个'});
+  const segBtns=[[1,'×1'],[10,'×10'],['max','×最大']].map(([v,t])=>{
+    const b=h('button',{'aria-pressed':'false'},t); b.addEventListener('click',()=>{ S.opt.buy=v; }); seg.appendChild(b); return [v,b];
+  });
+  const s1=sect(el,'空',seg);
+  const autoT=h('label',{class:'toggle',hidden:true},'<input type="checkbox"> 自动买空');
+  autoT.querySelector('input').addEventListener('change',e=>{ S.opt.autoGen=e.target.checked; });
+  s1.querySelector('h3').insertBefore(autoT, seg);
+  const gens=h('div',{class:'gens'}); s1.appendChild(gens);
+  const rows=GENS.map((g,i)=>{
+    const r=h('div',{class:'gen'});
+    r.innerHTML='<div><span class="nm"></span><span class="cnt"></span></div><div class="ds"></div><div class="pr"></div>';
+    const b=h('button',{class:'btn'}); b.addEventListener('click',()=>buyGen(i, S.opt.buy==='max'?'max':Math.min(S.opt.buy, genCap(i)) ));
+    r.appendChild(b); gens.appendChild(r);
+    return {r,b,nm:r.querySelector('.nm'),cnt:r.querySelector('.cnt'),ds:r.querySelector('.ds'),pr:r.querySelector('.pr')};
+  });
+  const s2=sect(el,'升级');
+  const autoU=h('label',{class:'toggle',hidden:true},'<input type="checkbox"> 自动买升级');
+  autoU.querySelector('input').addEventListener('change',e=>{ S.opt.autoUp=e.target.checked; });
+  s2.querySelector('h3').appendChild(autoU);
+  const cards=h('div',{class:'cards'}); s2.appendChild(cards);
+  const upd=upgList(cards,'main');
+  return {el, update(force){
+    for (const [v,b] of segBtns) b.setAttribute('aria-pressed', S.opt.buy===v?'true':'false');
+    autoT.hidden=!kh('k6'); autoT.querySelector('input').checked=S.opt.autoGen;
+    autoU.hidden=!kh('k4'); autoU.querySelector('input').checked=S.opt.autoUp;
+    let shownGhost=false;
+    rows.forEach((o,i)=>{
+      const known = i===0 || S.gens[i]>0 || S.gens[i-1]>0 || S.wBest>=GENS[i].c*0.3;
+      const vis = known || !shownGhost;
+      if (!known) shownGhost=true;
+      if (o.r.hidden===vis) o.r.hidden=!vis;
+      if (!vis) return;
+      setCls(o.r,'ghost',!known);
+      if (!known){
+        setT(o.nm,'？？？'); setT(o.cnt,''); setT(o.ds,'下一种空。'); setH(o.pr,'');
+        setH(o.b, N('w', genCostN(i,1))); setCls(o.b,'no',true); o.b.disabled=true; return;
+      }
+      o.b.disabled=false;
+      setT(o.nm,GENS[i].n); setT(o.cnt, S.gens[i]>0 ? '× '+S.gens[i] : '');
+      setT(o.ds, GENS[i].d + (inCh(3)?'（最多 10 个）':''));
+      const each=genProdEach(i)*globalMult()*(1-prismPct());
+      setH(o.pr, '每个 +'+N('w',each)+' / 秒'+(S.gens[i]>0?'，共 +'+N('w',each*S.gens[i])+' / 秒':'')+'<span class="muted">　·　'+(25-S.gens[i]%25)+' 个后翻倍</span>');
+      let n = S.opt.buy==='max' ? Math.max(1, genMaxN(i)) : S.opt.buy;
+      n=Math.min(n, Math.max(1,genCap(i)));
+      const c=genCostN(i,n);
+      const capped=genCap(i)<=0;
+      setH(o.b, capped ? '满了' : (n>1?'买 '+n+' 个　':'买　')+N('w',c));
+      setCls(o.b,'no', capped || c>S.w);
+    });
+    upd(force);
+  }};
+}
+
+/* ===== 光 ===== */
+const TRI={R:[150,22],G:[20,248],B:[280,248]};
+function buildPrism(){
+  const el=pane('prism','光','一束什么都没有的光，穿过三棱镜，散成三种什么都没有。拖动三角形里的点，决定往哪种颜色多分一点。');
+  const wrap=h('div',{class:'prism'}); el.appendChild(wrap);
+  const left=h('div');
+  left.innerHTML='<svg class="tri" viewBox="0 0 300 280" role="img" aria-label="分光比例选择">'+
+    '<polygon class="face" points="150,22 20,248 280,248"/>'+
+    '<path class="grid" d="M150,22 L150,248 M20,248 L215,135 M280,248 L85,135"/>'+
+    '<circle class="cdot" cx="150" cy="22" r="10" style="fill:var(--cr)"/>'+
+    '<circle class="cdot" cx="20" cy="248" r="10" style="fill:var(--cg)"/>'+
+    '<circle class="cdot" cx="280" cy="248" r="10" style="fill:var(--cb)"/>'+
+    '<text class="lr" x="168" y="27"></text><text class="lg" x="8" y="274"></text><text class="lb" x="246" y="274"></text>'+
+    '<circle class="handle" r="12" cx="150" cy="172"/></svg>';
+  wrap.appendChild(left);
+  const right=h('div');
+  right.innerHTML='<svg class="beam" viewBox="0 0 360 150" aria-hidden="true">'+
+    '<line class="in" x1="0" y1="75" x2="168" y2="75"/>'+
+    '<path class="ray rr" style="stroke:var(--cr)" d="M196,75 L360,18"/>'+
+    '<path class="ray rg" style="stroke:var(--cg)" d="M196,75 L360,75"/>'+
+    '<path class="ray rb" style="stroke:var(--cb)" d="M196,75 L360,132"/>'+
+    '<polygon class="glass" points="160,30 160,120 214,75"/></svg>'+
+    '<label class="slider">分光 <input type="range" min="0" max="50" step="1" aria-label="分光比例"><span class="pv"></span></label>'+
+    '<p class="small muted" style="margin-top:6px">被分走的白色不会进口袋，而是变成颜色。</p>'+
+    '<div class="colorrows"></div>';
+  wrap.appendChild(right);
+  const svg=left.querySelector('svg'), handle=left.querySelector('.handle');
+  const range=right.querySelector('input'), pv=right.querySelector('.pv');
+  range.addEventListener('input',()=>{ S.prism.pct=(+range.value)/100; });
+  const rows=right.querySelector('.colorrows');
+  const crow={};
+  for (const c of PRIMS){
+    const r=h('div',{class:'crow'},'<i class="dot d-'+c+'"></i><div><span class="amt"></span><div class="ef"></div></div><span class="rt"></span>');
+    rows.appendChild(r); crow[c]={amt:r.querySelector('.amt'),ef:r.querySelector('.ef'),rt:r.querySelector('.rt')};
+  }
+  // 拖动
+  function toBary(px,py){
+    const [x1,y1]=TRI.R,[x2,y2]=TRI.G,[x3,y3]=TRI.B;
+    const d=(y2-y3)*(x1-x3)+(x3-x2)*(y1-y3);
+    let a=((y2-y3)*(px-x3)+(x3-x2)*(py-y3))/d, b=((y3-y1)*(px-x3)+(x1-x3)*(py-y3))/d, c=1-a-b;
+    a=Math.max(0,a); b=Math.max(0,b); c=Math.max(0,c); const s=a+b+c||1; a/=s; b/=s; c/=s;
+    if (Math.abs(a-1/3)<0.035 && Math.abs(b-1/3)<0.035) { a=b=c=1/3; }
+    return [a,b,c];
+  }
+  let drag=false;
+  function setFrom(e){
+    const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+    const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+    const [a,b,c]=toBary(p.x,p.y); S.prism.wr=a; S.prism.wg=b; S.prism.wb=c;
+  }
+  svg.addEventListener('pointerdown',e=>{ drag=true; svg.setPointerCapture(e.pointerId); setFrom(e); });
+  svg.addEventListener('pointermove',e=>{ if (drag) setFrom(e); });
+  svg.addEventListener('pointerup',()=>{ drag=false; });
+  svg.addEventListener('pointercancel',()=>{ drag=false; });
+  const s2=sect(el,'升级'); const cards=h('div',{class:'cards'}); s2.appendChild(cards);
+  const upd=upgList(cards,'prism');
+  const lr=left.querySelector('.lr'), lg=left.querySelector('.lg'), lb=left.querySelector('.lb');
+  const rays={r:right.querySelector('.rr'),g:right.querySelector('.rg'),b:right.querySelector('.rb')};
+  return {el, update(force){
+    const p=S.prism;
+    const x=p.wr*TRI.R[0]+p.wg*TRI.G[0]+p.wb*TRI.B[0], y=p.wr*TRI.R[1]+p.wg*TRI.G[1]+p.wb*TRI.B[1];
+    handle.setAttribute('cx',x.toFixed(1)); handle.setAttribute('cy',y.toFixed(1));
+    setT(lr,Math.round(p.wr*100)+'%'); setT(lg,Math.round(p.wg*100)+'%'); setT(lb,Math.round(p.wb*100)+'%');
+    const mx=Math.round(prismMax()*100);
+    if (+range.max!==mx) range.max=mx;
+    if (document.activeElement!==range) range.value=Math.round(Math.min(p.pct,prismMax())*100);
+    setT(pv, Math.round(prismPct()*100)+'%');
+    const on=prismPct()>0;
+    for (const c of PRIMS){
+      const w=c==='r'?p.wr:c==='g'?p.wg:p.wb;
+      rays[c].setAttribute('stroke-width', on ? (1+w*12).toFixed(1) : '1');
+      rays[c].setAttribute('stroke-dasharray', on && w>0.001 ? 'none' : '3 5');
+    }
+    const cr=colorRates();
+    setH(crow.r.amt,N('r',S.r)); setT(crow.r.ef,'摸的收获 ×'+fx(redEff()));
+    setH(crow.g.amt,N('g',S.g)); setT(crow.g.ef,'全部产量 ×'+fx(greenEff()));
+    setH(crow.b.amt,N('b',S.b)); setT(crow.b.ef,'白色的价格 ÷'+fx(blueEff()));
+    for (const c of PRIMS) setT(crow[c].rt, '+'+fmt(cr[c])+'/秒');
+    upd(force);
+  }};
+}
+
+/* ===== 调 ===== */
+function buildMix(){
+  const el=pane('mix','调','两种颜色倒在一起，会变成第三种。倒掉的那一半就没了——反正本来也是棍母。');
+  const s1=sect(el,'管道');
+  const autoP=h('label',{class:'toggle',hidden:true},'<input type="checkbox"> 每 10 秒自动倒 25%');
+  autoP.querySelector('input').addEventListener('change',e=>{ S.opt.autoPour=e.target.checked; });
+  s1.querySelector('h3').appendChild(autoP);
+  const pipes=PIPES.map((p,i)=>{
+    const r=h('div',{class:'pipe'});
+    r.innerHTML='<span class="a"></span><span class="op">+</span><span class="b"></span><span class="op">→</span><span class="o"></span><span class="pv"></span>';
+    const b=h('button',{class:'btn'},'倒一半'); b.addEventListener('click',()=>{ const v=pour(i,0.5); if (v>0) addLog('你倒在一起，得到了 ['+p.o+':'+v+']。'); });
+    r.appendChild(b); s1.appendChild(r);
+    return {a:r.querySelector('.a'),b2:r.querySelector('.b'),o:r.querySelector('.o'),pv:r.querySelector('.pv'),btn:b};
+  });
+  const info=h('p',{class:'small muted',style:'margin-top:12px'},rich('[y] 拿去扭蛋机里抽。[c] 让你发呆得更值。[m] 拿去棋盘上换格子。'));
+  s1.appendChild(info);
+  const s2=sect(el,'升级'); const cards=h('div',{class:'cards'}); s2.appendChild(cards);
+  const upd=upgList(cards,'mix');
+  return {el, update(force){
+    autoP.hidden=!kh('k7'); autoP.querySelector('input').checked=S.opt.autoPour;
+    PIPES.forEach((p,i)=>{
+      const o=pipes[i];
+      setH(o.a,N(p.a,S[p.a])); setH(o.b2,N(p.b,S[p.b])); setH(o.o,N(p.o,S[p.o]));
+      const v=pourPreview(i,0.5);
+      setH(o.pv, v>0 ? '倒一半可得 +'+N(p.o,v) : '两边都要有一点才能倒');
+      setCls(o.btn,'no',v<=0);
+    });
+    upd(force);
+  }};
+}
+
+/* ===== 抽 ===== */
+function buildGacha(){
+  const el=pane('gacha','抽','每一颗扭蛋里都是棍母。偶尔，会是一种很有名的棍母。');
+  const g=h('div',{class:'gacha'}); el.appendChild(g);
+  const mach=h('div',{class:'machine'});
+  let caps=''; const pos=[[70,62],[100,52],[130,64],[58,92],[88,86],[118,92],[146,90],[74,118],[104,116],[134,120]];
+  for (const [x,y] of pos) caps+='<circle class="cap" cx="'+x+'" cy="'+y+'" r="13"/>';
+  mach.innerHTML='<svg viewBox="0 0 200 250" aria-hidden="true"><circle class="shell" cx="100" cy="90" r="74"/><g class="caps">'+caps+'</g>'+
+    '<rect class="shell" x="38" y="160" width="124" height="74" rx="6"/><circle class="shell" cx="100" cy="196" r="15"/><rect class="shell" x="88" y="220" width="24" height="14"/></svg>';
+  g.appendChild(mach);
+  const right=h('div');
+  right.innerHTML='<div class="pullbtns"></div><p class="small muted pity" style="margin-top:10px"></p><div class="sect" style="margin-top:18px"><h3>刚刚抽到</h3><div class="tray"></div></div>';
+  g.appendChild(right);
+  const b1=h('button',{class:'btn solid'}), b10=h('button',{class:'btn'});
+  right.querySelector('.pullbtns').append(b1,b10);
+  const pity=right.querySelector('.pity'), tray=right.querySelector('.tray');
+  tray.appendChild(h('div',{class:'empty'},'还没抽过。'));
+  function doPull(n){
+    const res=pull(n); if (!res) return;
+    mach.classList.remove('spin'); void mach.offsetWidth; mach.classList.add('spin');
+    tray.innerHTML='';
+    res.forEach((r,j)=>{
+      let c;
+      if (r.type==='blank') c=h('div',{class:'pc'},'<span>　</span><small>（棍母）</small>');
+      else if (r.type==='color') c=h('div',{class:'pc color'},'+'+N(r.cur,r.v));
+      else if (r.type==='junk') c=h('div',{class:'pc junk'},r.n+'？');
+      else if (r.type==='relic') c=h('div',{class:'pc relic'},RELICS[r.idx].n+'<small>'+(r.lv===1?'新的空物':'升到 '+r.lv+' 级')+'</small>');
+      else c=h('div',{class:'pc relic'},RELICS[r.idx].n+'<small>满级，溢出</small>');
+      c.style.animationDelay=(j*60)+'ms'; tray.appendChild(c);
+      if (r.type==='relic') addLog(r.lv===1 ? '抽到了空物「'+RELICS[r.idx].n+'」。'+RELICS[r.idx].q : '「'+RELICS[r.idx].n+'」升到了 '+r.lv+' 级。');
+      if (r.type==='over') addLog('「'+RELICS[r.idx].n+'」已经满级了。溢出的部分让全部产量 +2%。');
+    });
+    const blanks=res.filter(r=>r.type==='blank').length;
+    if (blanks===res.length && n>=10) addLog('十连，全是棍母。很纯。');
+    relicKey='';
+  }
+  b1.addEventListener('click',()=>doPull(1)); b10.addEventListener('click',()=>doPull(10));
+  const s=sect(el,'空物'); const grid=h('div',{class:'relics'}); s.appendChild(grid);
+  let relicKey='';
+  return {el, update(force){
+    const c1=pullCostN(1), c10=pullCostN(10);
+    setH(b1,'抽一次　'+N('y',c1)); setCls(b1,'no',S.y<c1);
+    setH(b10,'十连　'+N('y',c10)); setCls(b10,'no',S.y<c10);
+    setH(pity,'抽到空物的概率 '+Math.round(relicChance()*100)+'%，再抽 '+(pityMax()-S.pity)+' 次必出。每次归零后价格重置。'+(S.overflow>0?' 溢出 '+S.overflow+' 次，全部产量 ×'+fx(1+0.02*S.overflow)+'。':''));
+    const k=JSON.stringify(S.relics);
+    if (k!==relicKey || force){
+      relicKey=k; grid.innerHTML='';
+      for (let i=1;i<=12;i++){
+        const lv=rl(i);
+        if (!lv){ grid.appendChild(h('div',{class:'relic unknown'},'<div class="nm">？？？</div><div class="q">还没抽到。</div>')); continue; }
+        let pips=''; for (let j=1;j<=RELIC_MAX;j++) pips+='<i class="'+(j<=lv?'on':'')+'"></i>';
+        grid.appendChild(h('div',{class:'relic'},'<span class="lv">'+lv+' / '+RELIC_MAX+'</span><div class="nm">'+RELICS[i].n+'</div><div class="q">'+RELICS[i].q+'</div><div class="ef">'+RELICS[i].d(lv)+'</div><div class="pips">'+pips+'</div>'));
+      }
+    }
+  }};
+}
+
+/* ===== 呆 ===== */
+const FACES=['( ·_· )','( ·_· )','( -_- )','( -_- )','( ˘_˘ )','( ˘ω˘ )','( ˘ω˘ )ᶻ','( ˘ω˘ )ᶻᶻ','( ˘ω˘ )ᶻᶻᶻ'];
+function buildIdle(){
+  const el=pane('idle','呆','什么都不做，也是一种做。只要不亲手去摸，倍率就会慢慢涨满；一摸，就醒了。');
+  const box=h('div',{class:'idlebox'}); el.appendChild(box);
+  const left=h('div'); left.innerHTML='<div class="face" aria-hidden="true"></div><div class="bigbar"><i></i></div>';
+  const right=h('dl',{class:'kv'});
+  right.innerHTML='<dt>现在</dt><dd class="v1"></dd><dt>上限</dt><dd class="v2"></dd><dt>蓄满要</dt><dd class="v3"></dd><dt>已经发呆</dt><dd class="v4"></dd>';
+  box.append(left,right);
+  const s=sect(el,'神游');
+  const wb=h('button',{class:'btn solid'},'神游'); const wd=h('p',{class:'small muted',style:'margin-top:8px'});
+  wb.addEventListener('click',()=>{ if (S.c>=10) doWarp(); });
+  s.append(wb,wd);
+  const s2=sect(el,'升级'); const cards=h('div',{class:'cards'}); s2.appendChild(cards);
+  const upd=upgList(cards,'idle');
+  const face=left.querySelector('.face'), bar=left.querySelector('.bigbar i');
+  return {el, update(force){
+    const f=idleFrac();
+    setT(face, FACES[Math.min(FACES.length-1, Math.floor(f*(FACES.length-1)+0.0001))]);
+    bar.style.width=(f*100).toFixed(1)+'%';
+    setT(right.querySelector('.v1'),'×'+fx(idleMult()));
+    setH(right.querySelector('.v2'),'×'+fx(idleMax())+'<span class="muted">　由 '+N('c',S.c)+' 决定</span>');
+    setT(right.querySelector('.v3'), fmtTime(idleBuild()));
+    setT(right.querySelector('.v4'), fmtTime(S.idle));
+    const spent=S.c*0.5;
+    setH(wd, S.c>=10 ? rich('花掉一半的 [c]（'+N('c',spent)+'），立刻得到 '+fmtTime(warpSecs(spent))+' 的产出。发呆上限也会跟着降低。') : rich('需要至少 [c:10]。'));
+    setCls(wb,'no',S.c<10);
+    upd(force);
+  }};
+}
+
+/* ===== 格 ===== */
+function buildBoard(){
+  const el=pane('board','格','空着的格子也是一种格子。买来容器摆上去，它们会让彼此更空。');
+  const wrap=h('div',{class:'boardwrap'}); el.appendChild(wrap);
+  const board=h('div',{class:'board',role:'grid','aria-label':'棋盘'}); wrap.appendChild(board);
+  const right=h('div'); wrap.appendChild(right);
+  right.innerHTML='<p class="tot" style="font-size:15px"></p><div class="inv" style="margin-top:12px"></div><div class="rowline" style="margin-top:12px"><span class="buyrow rowline"></span></div><div class="rowline" style="margin-top:10px"></div><p class="small muted hint" style="margin-top:12px">先在右边选一种，再点空格子摆上去。点已经摆好的格子，会把它收回来。</p>';
+  const inv=right.querySelector('.inv'), tot=right.querySelector('.tot');
+  let sel=1;
+  const DESCS={1:'洞：+10%，每有一个相邻的洞，再 +8%。',2:'框：本身没用。让相邻的洞和回声 ×1.8。',3:'回声：复制相邻最强的那个洞。'};
+  const pieceBtns={};
+  for (const t of [1,2,3]){
+    const b=h('button',{class:'piece','aria-pressed':'false'},'<span class="g">'+PIECES[t].s+'</span><span class="ds">'+DESCS[t]+'</span><span class="c"></span>');
+    b.addEventListener('click',()=>{ sel=t; });
+    inv.appendChild(b); pieceBtns[t]=b;
+  }
+  const buyB=h('button',{class:'btn'}); buyB.addEventListener('click',()=>{ if (buyPiece(sel)) addLog('买了一个「'+PIECES[sel].n+'」。'); });
+  right.querySelector('.buyrow').appendChild(buyB);
+  const deepB=h('button',{class:'btn'}); deepB.addEventListener('click',()=>{ if (buyDeep()) addLog('棋盘加深了。所有格子的效果 +25%。'); });
+  right.querySelectorAll('.rowline')[2].appendChild(deepB);
+  let size=0; let cells=[];
+  function rebuild(){
+    size=boardSize(); board.innerHTML=''; cells=[];
+    board.style.gridTemplateColumns='repeat('+size+', max-content)';
+    for (let r=0;r<size;r++) for (let c=0;c<size;c++){
+      const i=r*5+c;
+      const b=h('button',{class:'cell',role:'gridcell'},'<span class="g"></span><span class="v"></span>');
+      b.addEventListener('click',()=>{
+        if (S.board.cells[i]) placePiece(i,0);
+        else if (S.board.inv[sel]>0) placePiece(i,sel);
+      });
+      board.appendChild(b); cells.push({i,b,g:b.firstChild,v:b.lastChild});
+    }
+  }
+  return {el, update(force){
+    if (size!==boardSize()||force) rebuild();
+    const con=boardContribs();
+    for (const o of cells){
+      const t=S.board.cells[o.i];
+      setCls(o.b,'f',!!t);
+      setT(o.g, t?PIECES[t].s:'');
+      setT(o.v, t && con[o.i]>0 ? '+'+Math.round(con[o.i]*(1+0.2*rl(8))*100)+'%' : '');
+      o.b.setAttribute('aria-label', t ? PIECES[t].n : '空格');
+    }
+    for (const t of [1,2,3]){ pieceBtns[t].setAttribute('aria-pressed', sel===t?'true':'false'); setT(pieceBtns[t].querySelector('.c'),'× '+S.board.inv[t]); }
+    setH(tot,'棋盘让全部产量 ×'+fx(boardMult()));
+    const pc=pieceCost();
+    setH(buyB,'买一个「'+PIECES[sel].n+'」　'+N('m',pc)); setCls(buyB,'no',S.m<pc);
+    const dc=deepCost();
+    setH(deepB,'加深（第 '+(S.board.deep+1)+' 层）　'+N('m',dc)); setCls(deepB,'no',S.m<dc);
+  }};
+}
+
+/* ===== 零 ===== */
+function nextKAt(){
+  const g=kGain(); const lo0=Math.max(10, Math.log10(Math.max(1,S.wTot)));
+  let lo=lo0, hi=lo0+40;
+  const save=S.wTot;
+  for (let it=0;it<50;it++){ const mid=(lo+hi)/2; S.wTot=Math.pow(10,mid); if (kGain()>=g+1) hi=mid; else lo=mid; }
+  S.wTot=save; return Math.pow(10,hi);
+}
+function askReset(enter){
+  const gain=kGain();
+  const go=()=>{ doReset(enter||0); };
+  const title = enter ? '进入「'+CHALS[enter].n+'」' : (S.ch.cur ? '离开挑战' : '归零');
+  let body = enter ? rich(CHALS[enter].d+'<br><br>进入后会立刻归零（这次可得 [k:'+gain+']），然后在限制下累计获得 [w:'+CHALS[enter].goal+']。')
+    : rich('白色、彩色、所有的空和这一轮的升级都会消失。黑色、空物、棋盘、成就会留下。<br><br>这次可得 [k:'+gain+']。');
+  if (!enter && S.ch.cur && !chDone(S.ch.cur)) body=rich('「'+CHALS[S.ch.cur].n+'」还没完成。现在离开，这次挑战就白做了（不过照样可得 [k:'+gain+']）。');
+  if (!S.opt.confirm && !enter) return go();
+  modal(title, body, [{t:'算了'},{t:enter?'进入':'归零',solid:true,f:go}]);
+}
+function buildZero(){
+  const el=pane('zero','零','把一切归零。反正本来也是棍母。归零换来的颜色，比所有颜色加在一起还深。');
+  const z=h('div',{class:'zero'}); el.appendChild(z);
+  z.innerHTML='<div class="gain"></div><div class="zb"></div><p class="small muted zn" style="flex-basis:100%"></p>';
+  const btn=h('button',{class:'btn solid'},'归零'); btn.addEventListener('click',()=>{ if (canReset()) askReset(0); });
+  z.querySelector('.zb').appendChild(btn);
+  const stat=h('p',{class:'small',style:'margin-top:14px;color:var(--ink-2)'}); el.appendChild(stat);
+  const s=sect(el,'黑洞'); const cards=h('div',{class:'cards'}); s.appendChild(cards);
+  const kc={};
+  for (const u of KUPS){
+    const b=h('button',{class:'card'},'<span class="nm">'+u.n+'</span><span class="ds">'+rich(u.d)+'</span><span class="cs"></span>');
+    b.addEventListener('click',()=>{ if (buyKup(u.id)){ addLog('黑洞里多了「'+u.n+'」。'); dirtyAll(); } });
+    cards.appendChild(b); kc[u.id]=b;
+  }
+  const kr=h('button',{class:'card'},'<span class="nm">更黑</span><span class="ds"></span><span class="cs"></span>');
+  kr.addEventListener('click',()=>{ if (buyKr()) addLog('更黑了。'); });
+  cards.appendChild(kr);
+  return {el, update(){
+    const g=kGain();
+    if (S.wTot<1e10) setH(z.querySelector('.gain'), rich('这一轮累计获得 [w:1e10] 才能归零。现在是 [w:'+S.wTot+']。'));
+    else setH(z.querySelector('.gain'), rich('归零可得 <span class="n n-k" style="font-size:26px">'+fmt(g)+'</span>'));
+    setT(btn, S.ch.cur ? (chDone(S.ch.cur)?'归零，离开挑战':'放弃挑战并归零') : '归零');
+    setCls(btn,'no',!canReset());
+    setH(z.querySelector('.zn'), S.wTot>=1e10 ? rich('累计到 [w:'+nextKAt()+'] 时可多得 1。') : '');
+    setH(stat, rich('拥有 [k:'+S.k+']，历史累计 [k:'+S.kTot+']。累计越多，全部产量越高：现在是 ×'+fx(blackEff())+'。花掉不会降低这个加成。'));
+    for (const u of KUPS){
+      const b=kc[u.id]; const own=kh(u.id);
+      const prevOwn = KUPS.indexOf(u)<3 || kh(KUPS[KUPS.indexOf(u)-1].id) || S.k>=u.c*0.2;
+      if (b.hidden===prevOwn) b.hidden=!prevOwn;
+      setCls(b,'own',own); setCls(b,'no',!own && S.k<u.c);
+      setH(b.querySelector('.cs'), own?'已拥有':N('k',u.c));
+    }
+    setH(kr.querySelector('.ds'),'全部产量 ×2。已经 '+S.kr+' 层，现在 ×'+fx(Math.pow(2,S.kr))+'。');
+    setH(kr.querySelector('.cs'),N('k',krCost())); setCls(kr,'no',S.k<krCost());
+    kr.hidden=!kh('k3');
+  }};
+}
+
+/* ===== 无 ===== */
+function buildChal(){
+  const el=pane('chal','无','还能更没有吗？可以。进入挑战会立刻归零（照常获得黑色），然后在限制下达到目标。达成后，再归零离开，奖励永久生效。');
+  const box=h('div',{class:'chs'}); el.appendChild(box);
+  const rows={};
+  for (let i=1;i<=5;i++){
+    const c=CHALS[i];
+    const r=h('div',{class:'ch'},'<div><span class="nm">'+c.n+'</span><span class="st"></span></div><div class="ds">'+rich(c.d)+'</div><div class="rw">目标：累计获得 '+N('w',c.goal)+'　奖励：'+rich(c.r)+'</div>');
+    const b=h('button',{class:'btn'});
+    b.addEventListener('click',()=>{
+      if (S.ch.cur===i){ askReset(0); }
+      else if (!S.ch.cur) askReset(i);
+    });
+    r.appendChild(b); box.appendChild(r); rows[i]={r,b,st:r.querySelector('.st')};
+  }
+  return {el, update(){
+    for (let i=1;i<=5;i++){
+      const o=rows[i], cur=S.ch.cur===i, done=chDone(i);
+      setCls(o.r,'done',done); setCls(o.r,'cur',cur);
+      setH(o.st, done?'<span class="stamp">已完成</span>':cur?'<span class="stamp">进行中</span>':'');
+      if (cur) setT(o.b, done?'归零离开':'放弃');
+      else setT(o.b, done?'再来一次':'进入');
+      setCls(o.b,'no', !!S.ch.cur && !cur);
+    }
+  }};
+}
+
+/* ===== 透 ===== */
+function buildTrans(){
+  const el=pane('trans','透','透明的棍母。你看不见它，它就在这里。它会从你累计的黑色里慢慢渗出来。');
+  const top=h('div',{class:'rowline'});
+  top.innerHTML='<span class="n n-t tbig" title="棍母"></span>';
+  const peek=h('label',{class:'toggle'},'<input type="checkbox"> 眯眼');
+  peek.querySelector('input').addEventListener('change',e=>{ S.peek=e.target.checked; if (S.peek) unlockAch('see'); });
+  top.appendChild(peek); el.appendChild(top);
+  const rate=h('p',{class:'small muted',style:'margin-top:8px'}); el.appendChild(rate);
+  const s=sect(el,'无形'); const cards=h('div',{class:'cards'}); s.appendChild(cards);
+  const tc={};
+  for (const u of TUPS){
+    const b=h('button',{class:'card'},'<span class="nm">'+u.n+'</span><span class="ds">'+rich(u.d)+'</span><span class="cs"></span>');
+    b.addEventListener('click',()=>{ if (buyTup(u.id)){ if (u.id!=='t5') addLog('获得了「'+u.n+'」。你看不见它。'); } });
+    cards.appendChild(b); tc[u.id]=b;
+  }
+  const big=top.querySelector('.tbig');
+  return {el, update(){
+    setT(big, fmt(S.t));
+    peek.querySelector('input').checked=!!S.peek;
+    setH(rate,'每秒 +'+N('t',tRate())+'。看不清的话，勾上「眯眼」。');
+    for (const u of TUPS){
+      const b=tc[u.id], own=th(u.id);
+      const lock = u.id==='t5' && !allChDone();
+      setCls(b,'own',own); setCls(b,'no',!own && (S.t<u.c || lock));
+      setH(b.querySelector('.cs'), own ? (u.id==='t5'?'已经是了':'已拥有') : N('t',u.c)+(lock?'　<span class="muted">（还差 '+(5-Object.keys(S.ch.done).length)+' 个「更没有」）</span>':''));
+    }
+  }};
+}
+
+/* ===== 录 ===== */
+function buildAch(){
+  const el=pane('ach','录','做过的事。大多数是什么都没做。每个成就让全部产量 ×1.03。');
+  const head=h('p',{class:'small',style:'color:var(--ink-2)'}); el.appendChild(head);
+  const grid=h('div',{class:'achs',style:'margin-top:12px'}); el.appendChild(grid);
+  const s=sect(el,'统计'); const stats=h('dl',{class:'kv'}); s.appendChild(stats);
+  let key='';
+  return {el, update(force){
+    const k=Object.keys(S.ach).join(',')+S.opt.fmt;
+    setH(head,'已达成 '+achCount()+' / '+ACHS.length+'，全部产量 ×'+fx(achMult())+'。');
+    if (k!==key||force){
+      key=k; grid.innerHTML='';
+      for (const a of ACHS){
+        const got=!!S.ach[a.id];
+        const nm = got||!a.secret ? a.n : '？？？';
+        const ds = got||!a.secret ? rich(a.d) : '这个成就藏起来了。';
+        grid.appendChild(h('div',{class:'ach'+(got?'':' lock')},'<div class="nm">'+nm+'</div><div class="ds">'+ds+'</div>'));
+      }
+    }
+    setH(stats,
+      '<dt>游戏时间</dt><dd>'+fmtTime(S.time)+'</dd>'+
+      '<dt>这一轮</dt><dd>'+fmtTime(S.timeRun)+'</dd>'+
+      '<dt>摸了</dt><dd>'+fmt(S.clicksAll)+' 次</dd>'+
+      '<dt>归零</dt><dd>'+S.resets+' 次</dd>'+
+      '<dt>扔掉杂物</dt><dd>'+S.junk.tossed+' 个</dd>'+
+      '<dt>抽了</dt><dd>'+S.pullsAll+' 次</dd>'+
+      '<dt>累计获得</dt><dd>'+N('w',S.wAll)+'</dd>'+
+      '<dt>合计价值</dt><dd>棍母</dd>');
+  }};
+}
+
+/* ===== 设 ===== */
+function buildSet(){
+  const el=pane('set','设','本游戏不含任何内容。所有货币都叫棍母，只是颜色不同。');
+  const s1=sect(el,'数字');
+  const segF=h('div',{class:'seg'});
+  const fb=[['cn','中文单位（万、亿、兆……）'],['sci','科学计数']].map(([v,t])=>{ const b=h('button',{'aria-pressed':'false'},t); b.addEventListener('click',()=>{ S.opt.fmt=v; dirtyAll(); }); segF.appendChild(b); return [v,b]; });
+  s1.appendChild(segF);
+  s1.appendChild(h('p',{class:'small muted',style:'margin-top:8px'},'中文单位一路数到「无量大数」（10 的 68 次方），再往后用科学计数。'));
+  const s2=sect(el,'外观');
+  const segT=h('div',{class:'seg'});
+  const tb=[['auto','跟随系统'],['light','白纸'],['dark','虚空']].map(([v,t])=>{ const b=h('button',{'aria-pressed':'false'},t); b.addEventListener('click',()=>{ S.opt.theme=v; applyTheme(); }); segT.appendChild(b); return [v,b]; });
+  s2.appendChild(segT);
+  const s3=sect(el,'归零');
+  const conf=h('label',{class:'toggle'},'<input type="checkbox"> 归零前先问一句');
+  conf.querySelector('input').addEventListener('change',e=>{ S.opt.confirm=e.target.checked; });
+  s3.appendChild(conf);
+  const s4=sect(el,'存档');
+  const row=h('div',{class:'rowline'});
+  const bSave=h('button',{class:'btn'},'现在保存'); bSave.addEventListener('click',()=>{ save(true); });
+  const bExp=h('button',{class:'btn'},'导出'); const bImp=h('button',{class:'btn'},'导入');
+  const bRst=h('button',{class:'btn'},'删档重来');
+  row.append(bSave,bExp,bImp,bRst); s4.appendChild(row);
+  const ta=h('textarea',{'aria-label':'存档文本',placeholder:'导出的存档会出现在这里；要导入，就把存档粘贴进来再点「导入」。',style:'margin-top:10px'}); s4.appendChild(ta);
+  const note=h('p',{class:'small muted',style:'margin-top:8px'},'每 15 秒自动保存在这台设备的浏览器里。离开时也会保存；回来时，离开期间的产出按效率结算。');
+  s4.appendChild(note);
+  bExp.addEventListener('click',()=>{ try{ ta.value=btoa(unescape(encodeURIComponent(serialize()))); ta.select(); }catch(e){ ta.value='导出失败：'+e.message; } });
+  bImp.addEventListener('click',()=>{
+    const v=ta.value.trim(); if (!v) { modal('导入','先把存档文本粘贴到框里。'); return; }
+    try{ const str=decodeURIComponent(escape(atob(v))); const ns=deserialize(str); S=ns; afterLoad(); save(); modal('导入','导入好了。'); }
+    catch(e){ modal('导入失败','这段文本不是有效的存档。检查一下是不是复制完整了。'); }
+  });
+  bRst.addEventListener('click',()=>{
+    modal('删档重来','所有进度都会被删除，包括黑色、空物、成就。这次是真的什么都没有了。',[{t:'算了'},{t:'删掉',solid:true,f:()=>{
+      modal('再确认一次','真的删掉？',[{t:'不删了'},{t:'删',solid:true,f:()=>{ S=newState(); try{ localStorage.removeItem(SAVE_KEY); }catch(e){} afterLoad(); addLog('一切归于棍母。'); }}]);
+    }}]);
+  });
+  return {el, update(){
+    for (const [v,b] of fb) b.setAttribute('aria-pressed', S.opt.fmt===v?'true':'false');
+    for (const [v,b] of tb) b.setAttribute('aria-pressed', S.opt.theme===v?'true':'false');
+    conf.querySelector('input').checked=S.opt.confirm;
+  }};
+}
+
+/* ---------- 结局 ---------- */
+function playEnding(){
+  save();
+  const e=$('#ending'); e.hidden=false;
+  const lines=e.querySelectorAll('.lines p'), btn=e.querySelector('.btn');
+  lines.forEach(p=>p.classList.remove('on')); btn.classList.remove('on');
+  lines.forEach((p,i)=>setTimeout(()=>p.classList.add('on'), 600+i*1700));
+  setTimeout(()=>{ btn.classList.add('on'); btn.focus(); }, 600+lines.length*1700);
+}
+
+/* ---------- 主题 ---------- */
+function applyTheme(){
+  const t=S.opt.theme;
+  if (t==='light'||t==='dark') document.documentElement.setAttribute('data-theme',t);
+  else document.documentElement.removeAttribute('data-theme');
+}
+
+/* ---------- 存档 ---------- */
+function save(manual){
+  try{ localStorage.setItem(SAVE_KEY, serialize()); if (manual) addLog('保存好了。存了一堆棍母。'); }
+  catch(e){ if (manual) addLog('这个浏览器不让保存。可以用「导出」手动备份。'); }
+}
+function load(){
+  try{ const str=localStorage.getItem(SAVE_KEY); if (str) return deserialize(str); }catch(e){}
+  return null;
+}
+function offlineProgress(){
+  const now=Date.now(); const away=(now-(S.last||now))/1000;
+  if (!(away>15)) return;
+  const sec=Math.min(away, 12*3600);
+  const eff=offlineEff();
+  const before={}; for (const c of CURS) before[c]=S[c];
+  const steps=Math.min(300, Math.max(10, Math.ceil(sec/30)));
+  for (let i=0;i<steps;i++) tick(sec*eff/steps, true);
+  const got=[]; for (const c of CURS) if (S[c]-before[c]>0.5) got.push('['+c+':'+(S[c]-before[c])+']');
+  modal('你回来了', rich('你离开了 '+fmtTime(away)+(away>sec?'（最多只算 12 小时）':'')+'。离开的时候，你在发呆。<br><br>按 '+Math.round(eff*100)+'% 的效率结算，你获得了：'+(got.join(' ')||'棍母')+'。'));
+}
+
+/* ---------- 组装 ---------- */
+function afterLoad(){
+  applyTheme();
+  $('#panel').innerHTML='';
+  for (const k in PANES) delete PANES[k];
+  const builders={main:buildMain,prism:buildPrism,mix:buildMix,gacha:buildGacha,idle:buildIdle,board:buildBoard,zero:buildZero,chal:buildChal,trans:buildTrans,ach:buildAch,set:buildSet};
+  for (const k in builders){ const p=builders[k](); p.dirty=true; PANES[k]=p; }
+  renderJunk(!!S.junk.active);
+  updateRail();
+  selectTab(TABS.find(t=>t.id===S.tab)&&TABS.find(t=>t.id===S.tab).show() ? S.tab : 'main');
+  render(0);
+}
+let lastFrame=performance.now(), lastRender=performance.now(), slowT=0;
+function frame(){
+  const now=performance.now(); let dt=(now-lastFrame)/1000; lastFrame=now;
+  if (dt>3){ const n=Math.min(120, Math.ceil(dt)); for (let i=0;i<n;i++) tick(dt/n, true); }
+  else if (dt>0) tick(dt, false);
+}
+function render(dt){
+  document.body.classList.toggle('colorless', inCh(2));
+  document.body.classList.toggle('peek', !!S.peek);
+  updateBank(); updateStage(dt);
+  const p=PANES[S.tab]; if (p) { p.update(p.dirty); p.dirty=false; }
+  slowT+=dt; if (slowT>1){ slowT=0; updateRail(); }
+}
+function start(){
+  buildBank(); buildStage(); buildRail();
+  const loaded=load();
+  if (loaded) S=loaded;
+  afterLoad();
+  if (loaded) offlineProgress();
+  else addLog('你把手伸进口袋。');
+  $('#ticker').textContent=TICKS[tickIdx];
+  setInterval(rotateTicker, 9000);
+  setInterval(frame, 50);
+  setInterval(()=>{ const now=performance.now(); render((now-lastRender)/1000); lastRender=now; }, 100);
+  setInterval(()=>save(false), 15000);
+  document.addEventListener('visibilitychange',()=>{ if (document.hidden) save(false); });
+  window.addEventListener('pagehide',()=>save(false));
+  $('#title').addEventListener('click',()=>{
+    S.titleClicks=(S.titleClicks||0)+1;
+    if (S.titleClicks===10){ unlockAch('seek'); addLog('你在标题里找了半天。这里什么都没有。'); }
+  });
+  $('#ending .btn').addEventListener('click',()=>{ $('#ending').hidden=true; S.endSeen=true; addLog('你继续摸。口袋里，还是棍母。'); });
+}
+start();
+
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"78694dd907a245f5a9176ee8479b2a13","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
